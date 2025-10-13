@@ -1,0 +1,74 @@
+version: "3.9" 
+
+services:
+  thaian_rabbitmq : 
+    image: rabbitmq:4-management
+    container_name: thaian_rabbitmq
+    ports:
+      - "5672:5672"      # port cho ứng dụng backend (NodeJS, NestJS, v.v.)
+      - "15672:15672"    # port cho web UI quản lý RabbitMQ
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - thaian_rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+
+  thaian_api_gateway :
+    build: 
+      context: ./api-gateway
+      dockerfile: Dockerfile  
+    container_name: thaian_api_gateway
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./api-gateway:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - thaian_rabbitmq
+    restart: unless-stopped
+
+  thaian_auth_service : 
+    build: 
+      context: ./auth
+      dockerfile: Dockerfile
+    container_name: thaian_auth_service
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./auth:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - thaian_rabbitmq
+    restart: unless-stopped
+
+  thaian_order_service : 
+    build: 
+      context: ./order
+      dockerfile: Dockerfile
+    container_name: thaian_order_service
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./order:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - thaian_rabbitmq
+    restart: unless-stopped
+
+  thaian_product_service : 
+    build: 
+      context: ./product
+      dockerfile: Dockerfile
+    container_name: thaian_product_service
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./product:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - thaian_rabbitmq
+    restart: unless-stopped
+
+volumes:
+  thaian_rabbitmq_data:

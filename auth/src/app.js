@@ -32,9 +32,9 @@ class App {
   }
 
   setRoutes() {
-    this.app.post("/login", (req, res) => this.authController.login(req, res));
-    this.app.post("/register", (req, res) => this.authController.register(req, res));
-    this.app.get("/dashboard", authMiddleware, (req, res) => res.json({ message: "Welcome to dashboard" }));
+    this.app.post("/auth/login", (req, res) => this.authController.login(req, res));
+    this.app.post("/auth/register", (req, res) => this.authController.register(req, res));
+    this.app.get("/auth/dashboard", authMiddleware, (req, res) => res.json({ message: "Welcome to dashboard" }));
   }
 
   start() {
