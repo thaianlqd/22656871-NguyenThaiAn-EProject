@@ -9,7 +9,7 @@ chai.use(chaiHttp);
 
 describe("Products", () => {
   let app;
-  let authToken; // Khai báo authToken ở đây
+  let authToken; // Khai báo authToken ở đây nhé
 
   before(async () => {
     app = new App();
