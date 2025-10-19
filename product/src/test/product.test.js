@@ -11,21 +11,38 @@ describe("Products", () => {
   let app;
   let authToken; // Khai báo authToken ở đây nhé
 
+  // before(async () => {
+  //   app = new App();
+  //   await Promise.all([app.connectDB(), app.setupMessageBroker()])
+
+  //   // Authenticate with the auth microservice to get a token
+  //   const authRes = await chai
+  //     // .request("http://localhost:3000")
+  //     .request("http://thaian_auth_service:3000") // <-- ĐÃ SỬA
+  //     .post("/login")
+  //     .send({ username: process.env.LOGIN_TEST_USER, password: process.env.LOGIN_TEST_PASSWORD });
+
+  //   authToken = authRes.body.token;
+  //   // console.log(authToken);
+  //   console.log("Auth Token:", authToken); // Kiểm tra xem có lấy được token không
+  //   // app.start();
+  // });
+
   before(async () => {
     app = new App();
-    await Promise.all([app.connectDB(), app.setupMessageBroker()])
+    await Promise.all([app.connectDB(), app.setupMessageBroker()]);
+
+    // Lấy URL từ biến môi trường, nếu không có thì dùng localhost (cho CI)
+    const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3000';
 
     // Authenticate with the auth microservice to get a token
     const authRes = await chai
-      // .request("http://localhost:3000")
-      .request("http://thaian_auth_service:3000") // <-- ĐÃ SỬA
+      .request(AUTH_SERVICE_URL) // <-- ĐÃ SỬA THÀNH BIẾN
       .post("/login")
       .send({ username: process.env.LOGIN_TEST_USER, password: process.env.LOGIN_TEST_PASSWORD });
 
     authToken = authRes.body.token;
-    // console.log(authToken);
-    console.log("Auth Token:", authToken); // Kiểm tra xem có lấy được token không
-    // app.start();
+    console.log("Auth Token:", authToken); 
   });
 
   after(async () => {
