@@ -281,7 +281,8 @@ jobs:
       - name: Lint code
         run: |
           npm install -g eslint
-          eslint . --ext .js --ignore-path .gitignore
+          # Xóa cờ --ignore-path vì nó đã lỗi thời với các phiên bản ESLint mới
+          eslint . --ext .js
 
       # --- 8. Dọn dẹp (THÊM DỌN DẸP RABBITMQ) ---
       - name: Cleanup MongoDB container
