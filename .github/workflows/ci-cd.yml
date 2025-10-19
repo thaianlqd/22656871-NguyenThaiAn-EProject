@@ -314,25 +314,25 @@ jobs:
         with:
           context: ./auth
           push: true
-          tags: thaian/microservices-auth:latest
+          tags: thaianlqd050204/microservices-auth:latest
 
       - name: Build and push Product image
         uses: docker/build-push-action@v5
         with:
           context: ./product
           push: true
-          tags: thaian/microservices-product:latest
+          tags: thaianlqd050204/microservices-product:latest
 
       - name: Build and push Order image
         uses: docker/build-push-action@v5
         with:
           context: ./order
           push: true
-          tags: thaian/microservices-order:latest
+          tags: thaianlqd050204/microservices-order:latest
 
       - name: Build and push Gateway image
         uses: docker/build-push-action@v5
         with:
           context: ./api-gateway
           push: true
-          tags: thaian/microservices-gateway:latest
+          tags: thaianlqd050204/microservices-gateway:latest
