@@ -131,4 +131,4 @@ Góp Phần
 Fork repo, tạo branch, pull request.
 Liên hệ: [email hoặc GitHub].
 
-Dự án được xây dựng dựa trên Node.js, Express, Mongoose, AMQPLib. Cảm ơn bạn đã sử dụng!
+Dự án được xây dựng dựa trên Node.js, Express, Mongoose, AMQPLib. Cảm ơn bạn đã sử dụng!!
