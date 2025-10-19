@@ -1,3 +1,7 @@
+const config = require("../config");
+
+
+
 const AuthService = require("../services/authService");
 
 /**
@@ -11,6 +15,8 @@ class AuthController {
 
   async login(req, res) {
     const { username, password } = req.body;
+
+    console.log("JWT Secret in login:", config.jwtSecret); // Log để kiểm tra
 
     const result = await this.authService.login(username, password);
 

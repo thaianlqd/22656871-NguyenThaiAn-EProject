@@ -1,74 +1,191 @@
-version: "3.9" 
+# version: "3.9"
+
+# services:
+#   thaian_rabbitmq:
+#     image: rabbitmq:4-management
+#     container_name: thaian_rabbitmq
+#     ports:
+#       - "5672:5672"      # port cho ứng dụng backend (NodeJS, NestJS, v.v.)
+#       - "15672:15672"    # port cho web UI quản lý RabbitMQ
+#     environment:
+#       RABBITMQ_DEFAULT_USER: guest
+#       RABBITMQ_DEFAULT_PASS: guest
+#     volumes:
+#       - thaian_rabbitmq_data:/var/lib/rabbitmq
+#     restart: unless-stopped
+
+#   thaian_mongodb:
+#     image: mongo:7.0
+#     container_name: thaian_mongodb
+#     ports:
+#       - "27017:27017"    # Port mặc định cho MongoDB
+#     # environment:
+#     #   MONGO_INITDB_ROOT_USERNAME: admin
+#     #   MONGO_INITDB_ROOT_PASSWORD: password
+#     volumes:
+#       - thaian_mongodb_data:/data/db
+#     restart: unless-stopped
+
+#   thaian_api_gateway:
+#     build:
+#       context: ./api-gateway
+#       dockerfile: Dockerfile
+#     container_name: thaian_api_gateway
+#     ports:
+#       - "3003:3003"
+#     volumes:
+#       - ./api-gateway:/usr/src/app
+#       - /usr/src/app/node_modules
+#     depends_on:
+#       - thaian_rabbitmq
+#     restart: unless-stopped
+
+#   thaian_auth_service:
+#     build:
+#       context: ./auth
+#       dockerfile: Dockerfile
+#     container_name: thaian_auth_service
+#     ports:
+#       - "3000:3000"
+#     volumes:
+#       - ./auth:/usr/src/app
+#       - /usr/src/app/node_modules
+#     depends_on:
+#       - thaian_rabbitmq
+#       - thaian_mongodb
+#     restart: unless-stopped
+
+#   thaian_order_service:
+#     build:
+#       context: ./order
+#       dockerfile: Dockerfile
+#     container_name: thaian_order_service
+#     ports:
+#       - "3002:3002"
+#     volumes:
+#       - ./order:/usr/src/app
+#       - /usr/src/app/node_modules
+#     depends_on:
+#       - thaian_rabbitmq
+#       - thaian_mongodb
+#     restart: unless-stopped
+
+#   thaian_product_service:
+#     build:
+#       context: ./product
+#       dockerfile: Dockerfile
+#     container_name: thaian_product_service
+#     ports:
+#       - "3001:3001"
+#     volumes:
+#       - ./product:/usr/src/app
+#       - /usr/src/app/node_modules
+#     depends_on:
+#       - thaian_rabbitmq
+#       - thaian_mongodb
+#     restart: unless-stopped
+
+# volumes:
+#   thaian_rabbitmq_data:
+#   thaian_mongodb_data:
+
+
+# test thử
+
+version: "3.9"
 
 services:
-  thaian_rabbitmq : 
+  thaian_rabbitmq:
     image: rabbitmq:4-management
     container_name: thaian_rabbitmq
     ports:
-      - "5672:5672"      # port cho ứng dụng backend (NodeJS, NestJS, v.v.)
-      - "15672:15672"    # port cho web UI quản lý RabbitMQ
+      - "5672:5672"
+      - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
     volumes:
       - thaian_rabbitmq_data:/var/lib/rabbitmq
     restart: unless-stopped
+    networks:
+      - microservices-net
 
-  thaian_api_gateway :
-    build: 
-      context: ./api-gateway
-      dockerfile: Dockerfile  
+  thaian_mongodb:
+    image: mongo:7.0
+    container_name: thaian_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - thaian_mongodb_data:/data/db
+    restart: unless-stopped
+    networks:
+      - microservices-net
+
+  thaian_api_gateway:
+    build: ./api-gateway
     container_name: thaian_api_gateway
     ports:
-      - "3003:3003"
+      - "3003:3003"  # Duy nhất expose ra host
     volumes:
       - ./api-gateway:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
-      - thaian_rabbitmq
+      - thaian_auth_service
+      - thaian_order_service
+      - thaian_product_service
     restart: unless-stopped
+    networks:
+      - microservices-net
 
-  thaian_auth_service : 
-    build: 
-      context: ./auth
-      dockerfile: Dockerfile
+  thaian_auth_service:
+    build: ./auth
     container_name: thaian_auth_service
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     volumes:
       - ./auth:/usr/src/app
       - /usr/src/app/node_modules
+    env_file: ./auth/.env  # Load .env từ thư mục auth
     depends_on:
-      - thaian_rabbitmq
+      - thaian_mongodb
     restart: unless-stopped
+    networks:
+      - microservices-net
 
-  thaian_order_service : 
-    build: 
-      context: ./order
-      dockerfile: Dockerfile
+  thaian_order_service:
+    build: ./order
     container_name: thaian_order_service
-    ports:
-      - "3002:3002"
+    expose:
+      - "3002"
     volumes:
       - ./order:/usr/src/app
       - /usr/src/app/node_modules
+    env_file: ./order/.env  # Load .env từ thư mục order
     depends_on:
-      - thaian_rabbitmq
+      - thaian_mongodb
     restart: unless-stopped
+    networks:
+      - microservices-net
 
-  thaian_product_service : 
-    build: 
-      context: ./product
-      dockerfile: Dockerfile
+  thaian_product_service:
+    build: ./product
     container_name: thaian_product_service
-    ports:
-      - "3001:3001"
+    expose:
+      - "3001"
     volumes:
       - ./product:/usr/src/app
       - /usr/src/app/node_modules
+    env_file: ./product/.env  # Load .env từ thư mục product
     depends_on:
-      - thaian_rabbitmq
+      - thaian_mongodb
     restart: unless-stopped
+    networks:
+      - microservices-net
 
 volumes:
   thaian_rabbitmq_data:
+  thaian_mongodb_data:
+
+networks:
+  microservices-net:
+    driver: bridge

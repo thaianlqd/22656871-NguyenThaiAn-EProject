@@ -37,6 +37,7 @@ class ProductController {
   }
 
   async createOrder(req, res, next) {
+    //note: cứ tạm như này trước đã :v phần quantity từ từ để sau
     try {
       const token = req.headers.authorization;
       if (!token) {
@@ -85,7 +86,7 @@ class ProductController {
     }
   }
   
-
+ //phần 8: làm thêm nè - lấy danh sách hóa đơn
   async getOrderStatus(req, res, next) {
     const { orderId } = req.params;
     const order = this.ordersMap.get(orderId);
@@ -94,6 +95,8 @@ class ProductController {
     }
     return res.status(200).json(order);
   }
+
+  
 
   async getProducts(req, res, next) {
     try {
@@ -109,6 +112,9 @@ class ProductController {
       res.status(500).json({ message: "Server error" });
     }
   }
+
+ 
+  
 }
 
 module.exports = ProductController;

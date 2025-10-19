@@ -6,7 +6,7 @@ const app = express();
 
 // Route requests to the auth service
 app.use("/auth", (req, res) => {
-  req.url = "/auth" + req.url;
+  // req.url = "/auth" + req.url;
   proxy.web(req, res, { target: "http://thaian_auth_service:3000" });
 });
 
@@ -18,7 +18,7 @@ app.use("/products", (req, res) => {
 
 // Route requests to the order service
 app.use("/orders", (req, res) => {
-  req.url = "/orders" + req.url;
+  // req.url = "/orders" + req.url;
   proxy.web(req, res, { target: "http://thaian_order_service:3002" });
 });
 
