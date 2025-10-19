@@ -1,138 +1,3 @@
-# name: CI/CD Pipeline for Microservices
-
-# on:
-#   push:
-#     branches: [ main ]
-#   pull_request:
-#     branches: [ main ]
-
-# jobs:
-#   test:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v4
-
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
-#           cache: 'npm'
-
-#       - name: Pull MongoDB image
-#         run: docker pull mongo:7.0
-
-#       - name: Start MongoDB container
-#         run: |
-#           docker run -d --name ci-mongodb -p 27017:27017 mongo:7.0 --noauth  # No auth for CI test
-
-#       - name: Wait for MongoDB ready
-#         run: |
-#           for i in {1..60}; do
-#             if nc -z localhost 27017; then
-#               echo "MongoDB port open!"
-#               # Check command
-#               if mongo --host localhost --port 27017 --eval "db.adminCommand('ismaster')" > /dev/null 2>&1; then
-#                 echo "MongoDB ready!"
-#                 break
-#               fi
-#             fi
-#             echo "Waiting for MongoDB... ($i/60)"
-#             sleep 3
-#           done
-#           if ! nc -z localhost 27017; then
-#             echo "MongoDB not ready"
-#             docker logs ci-mongodb
-#             exit 1
-#           fi
-
-#       - name: Create .env for Auth
-#         run: |
-#           echo "MONGODB_AUTH_URI=mongodb://localhost:27017/ThaianAuthService" > auth/.env
-#           echo "JWT_SECRET=thaiansecret" >> auth/.env
-
-#       - name: Install dependencies for Auth
-#         run: cd auth && npm ci
-
-#       - name: Run tests for Auth
-#         run: cd auth && npm test
-
-#       - name: Create .env for Product
-#         run: |
-#           echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/ThaianProductService" > product/.env
-#           echo "JWT_SECRET=thaiansecret" >> product/.env
-
-#       - name: Install dependencies for Product
-#         run: cd product && npm ci
-
-#       - name: Run tests for Product
-#         run: cd product && npm test
-
-#       - name: Create .env for Order
-#         run: |
-#           echo "MONGODB_ORDER_URI=mongodb://localhost:27017/ThaianOrderService" > order/.env
-#           echo "JWT_SECRET=thaiansecret" >> order/.env
-
-#       - name: Install dependencies for Order
-#         run: cd order && npm ci
-
-#       - name: Run tests for Order
-#         run: cd order && npm test
-
-#       - name: Lint code
-#         run: |
-#           npm install -g eslint
-#           eslint . --ext .js --ignore-path .gitignore
-
-#       - name: Cleanup MongoDB container
-#         if: always()  # Luôn chạy, dù pass/fail
-#         run: docker stop ci-mongodb && docker rm ci-mongodb
-
-#   build-docker:
-#     needs: test
-#     runs-on: windows-latest
-#     steps:
-#       - uses: actions/checkout@v4
-
-#       - name: Set up Docker Buildx
-#         uses: docker/setup-buildx-action@v3
-
-#       - name: Login to Docker Hub
-#         uses: docker/login-action@v3
-#         with:
-#           username: ${{ secrets.DOCKER_USERNAME }}
-#           password: ${{ secrets.DOCKER_PASSWORD }}
-
-#       - name: Build and push Auth image
-#         uses: docker/build-push-action@v5
-#         with:
-#           context: ./auth
-#           push: true
-#           tags: thaian/microservices-auth:latest
-
-#       - name: Build and push Product image
-#         uses: docker/build-push-action@v5
-#         with:
-#           context: ./product
-#           push: true
-#           tags: thaian/microservices-product:latest
-
-#       - name: Build and push Order image
-#         uses: docker/build-push-action@v5
-#         with:
-#           context: ./order
-#           push: true
-#           tags: thaian/microservices-order:latest
-
-#       - name: Build and push Gateway image
-#         uses: docker/build-push-action@v5
-#         with:
-#           context: ./api-gateway
-#           push: true
-#           tags: thaian/microservices-gateway:latest
-
-
-# tesst
-
 name: CI/CD Pipeline for Microservices
 
 on:
@@ -144,16 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:7.0
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongo --port 27017 --eval 'db.adminCommand(\"ismaster\")'" 
-          --health-interval 30s 
-          --health-timeout 30s 
-          --health-retries 30
     steps:
       - uses: actions/checkout@v4
 
@@ -163,19 +18,30 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Pull MongoDB image
+        run: docker pull mongo:7.0
+
+      - name: Start MongoDB container
+        run: |
+          docker run -d --name ci-mongodb -p 27017:27017 mongo:7.0 --noauth  # No auth for CI test
+
       - name: Wait for MongoDB ready
         run: |
           for i in {1..60}; do
-            if mongo --host localhost --port 27017 --eval "db.adminCommand('ismaster')" > /dev/null 2>&1; then
-              echo "MongoDB ready!"
-              break
+            if nc -z localhost 27017; then
+              echo "MongoDB port open!"
+              # Check command
+              if mongo --host localhost --port 27017 --eval "db.adminCommand('ismaster')" > /dev/null 2>&1; then
+                echo "MongoDB ready!"
+                break
+              fi
             fi
             echo "Waiting for MongoDB... ($i/60)"
-            sleep 5
+            sleep 3
           done
-          if ! mongo --host localhost --port 27017 --eval "db.adminCommand('ismaster')" > /dev/null 2>&1; then
+          if ! nc -z localhost 27017; then
             echo "MongoDB not ready"
-            docker logs $(docker ps -q --filter ancestor=mongo:7.0)
+            docker logs ci-mongodb
             exit 1
           fi
 
@@ -216,6 +82,10 @@ jobs:
         run: |
           npm install -g eslint
           eslint . --ext .js --ignore-path .gitignore
+
+      - name: Cleanup MongoDB container
+        if: always()  # Luôn chạy, dù pass/fail
+        run: docker stop ci-mongodb && docker rm ci-mongodb
 
   build-docker:
     needs: test
@@ -259,3 +129,5 @@ jobs:
           context: ./api-gateway
           push: true
           tags: thaian/microservices-gateway:latest
+
+
