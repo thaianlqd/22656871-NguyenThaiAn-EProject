@@ -9,6 +9,16 @@ on:
 jobs:
   test:
     runs-on: windows-latest
+    services:  # Spin up MongoDB cho test
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd mongo
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -16,30 +26,58 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'  # Cache npm để tăng tốc
+
+      - name: Wait for MongoDB ready
+        run: |
+          $startTime = Get-Date
+          while ($true) {
+            try {
+              mongo --host localhost --port 27017 --eval "db.adminCommand('ismaster')" | Out-Null
+              Write-Host "MongoDB ready!"
+              break
+            } catch {
+              $elapsed = (Get-Date) - $startTime
+              if ($elapsed.TotalSeconds -gt 30) {
+                throw "MongoDB not ready after 30s"
+              }
+              Start-Sleep -Seconds 2
+            }
+          }
+        shell: pwsh
 
       - name: Install dependencies for Auth
         run: cd auth && npm ci
+        shell: pwsh
 
       - name: Run tests for Auth
         run: cd auth && npm test
+        shell: pwsh
 
       - name: Install dependencies for Product
         run: cd product && npm ci
+        shell: pwsh
 
       - name: Run tests for Product
         run: cd product && npm test
+        shell: pwsh
 
       - name: Install dependencies for Order
         run: cd order && npm ci
+        shell: pwsh
 
       - name: Run tests for Order
         run: cd order && npm test
+        shell: pwsh
 
       - name: Lint code
-        run: npm install --global eslint && eslint . --ext .js --ignore-path .gitignore
+        run: |
+          npm install -g eslint
+          eslint . --ext .js --ignore-path .gitignore
+        shell: pwsh
 
   build-docker:
-    needs: test
+    needs: test  # Chạy sau test pass
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
