@@ -9,6 +9,16 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongo --port 27017 --eval 'db.adminCommand(\"ismaster\")'" 
+          --health-interval 30s 
+          --health-timeout 30s 
+          --health-retries 30  # Tăng retry để chờ initialize lâu hơn
     steps:
       - uses: actions/checkout@v4
 
@@ -18,30 +28,19 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Pull MongoDB image
-        run: docker pull mongo:7.0
-
-      - name: Start MongoDB container
-        run: |
-          docker run -d --name ci-mongodb -p 27017:27017 mongo:7.0 --noauth  # No auth for CI test
-
       - name: Wait for MongoDB ready
         run: |
           for i in {1..60}; do
-            if nc -z localhost 27017; then
-              echo "MongoDB port open!"
-              # Check command
-              if mongo --host localhost --port 27017 --eval "db.adminCommand('ismaster')" > /dev/null 2>&1; then
-                echo "MongoDB ready!"
-                break
-              fi
+            if mongo --host localhost --port 27017 --eval "db.adminCommand('ismaster')" > /dev/null 2>&1; then
+              echo "MongoDB ready!"
+              break
             fi
             echo "Waiting for MongoDB... ($i/60)"
-            sleep 3
+            sleep 5  # Tăng sleep để chờ
           done
-          if ! nc -z localhost 27017; then
-            echo "MongoDB not ready"
-            docker logs ci-mongodb
+          if ! mongo --host localhost --port 27017 --eval "db.adminCommand('ismaster')" > /dev/null 2>&1; then
+            echo "MongoDB not ready - logs:"
+            docker logs $(docker ps -q --filter ancestor=mongo:7.0)
             exit 1
           fi
 
@@ -82,10 +81,6 @@ jobs:
         run: |
           npm install -g eslint
           eslint . --ext .js --ignore-path .gitignore
-
-      - name: Cleanup MongoDB container
-        if: always()  # Luôn chạy, dù pass/fail
-        run: docker stop ci-mongodb && docker rm ci-mongodb
 
   build-docker:
     needs: test
