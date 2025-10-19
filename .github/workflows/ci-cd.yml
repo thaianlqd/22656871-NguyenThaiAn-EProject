@@ -280,8 +280,8 @@ jobs:
       # --- 7. Linting ---
       - name: Lint code
         run: |
-          npm install -g eslint
-          # Xóa cờ --ignore-path vì nó đã lỗi thời với các phiên bản ESLint mới
+          # Cài đặt phiên bản 8 của ESLint để tương thích với file .eslintrc.js
+          npm install -g eslint@8
           eslint . --ext .js
 
       # --- 8. Dọn dẹp (THÊM DỌN DẸP RABBITMQ) ---
