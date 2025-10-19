@@ -36,7 +36,7 @@ class ProductController {
     }
   }
 
-  async createOrder(req, res, next) {
+  async createOrder(req, res, _next) {
     //note: cứ tạm như này trước đã :v phần quantity từ từ để sau
     try {
       const token = req.headers.authorization;
@@ -87,7 +87,7 @@ class ProductController {
   }
   
  //phần 8: làm thêm nè - lấy danh sách hóa đơn
-  async getOrderStatus(req, res, next) {
+  async getOrderStatus(req, res, _next) {
     const { orderId } = req.params;
     const order = this.ordersMap.get(orderId);
     if (!order) {
@@ -98,7 +98,7 @@ class ProductController {
 
 
 
-  async getProducts(req, res, next) {
+  async getProducts(req, res, _next) {
     try {
       const token = req.headers.authorization;
       if (!token) {
