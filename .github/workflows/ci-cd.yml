@@ -8,8 +8,8 @@ on:
 
 jobs:
   test:
-    runs-on: windows-latest
-    services:  # Spin up MongoDB cho test
+    runs-on: ubuntu-latest  # Chuyển sang Linux để hỗ trợ MongoDB services
+    services:
       mongodb:
         image: mongo:7.0
         ports:
@@ -26,59 +26,44 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'  # Cache npm để tăng tốc
+          cache: 'npm'
 
       - name: Wait for MongoDB ready
         run: |
-          $startTime = Get-Date
-          while ($true) {
-            try {
-              mongo --host localhost --port 27017 --eval "db.adminCommand('ismaster')" | Out-Null
-              Write-Host "MongoDB ready!"
-              break
-            } catch {
-              $elapsed = (Get-Date) - $startTime
-              if ($elapsed.TotalSeconds -gt 30) {
-                throw "MongoDB not ready after 30s"
-              }
-              Start-Sleep -Seconds 2
-            }
-          }
-        shell: pwsh
+          for i in {1..30}; do
+            nc -z localhost 27017 && echo "MongoDB ready!" && exit 0
+            echo "Waiting for MongoDB... ($i/30)"
+            sleep 1
+          done
+          echo "MongoDB not ready after 30s"
+          exit 1
 
       - name: Install dependencies for Auth
         run: cd auth && npm ci
-        shell: pwsh
 
       - name: Run tests for Auth
         run: cd auth && npm test
-        shell: pwsh
 
       - name: Install dependencies for Product
         run: cd product && npm ci
-        shell: pwsh
 
       - name: Run tests for Product
         run: cd product && npm test
-        shell: pwsh
 
       - name: Install dependencies for Order
         run: cd order && npm ci
-        shell: pwsh
 
       - name: Run tests for Order
         run: cd order && npm test
-        shell: pwsh
 
       - name: Lint code
         run: |
           npm install -g eslint
           eslint . --ext .js --ignore-path .gitignore
-        shell: pwsh
 
   build-docker:
-    needs: test  # Chạy sau test pass
-    runs-on: windows-latest
+    needs: test
+    runs-on: windows-latest  # Giữ Windows cho build nếu bạn thích, hoặc đổi ubuntu-latest để nhanh hơn
     steps:
       - uses: actions/checkout@v4
 
