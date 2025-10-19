@@ -293,7 +293,7 @@ jobs:
         if: always() # Luôn chạy, dù pass/fail
         run: docker stop ci-rabbitmq && docker rm ci-rabbitmq
 
-  # --- Job Build-Docker (Không cần sửa) ---
+  # --- Job Build-Docker (Không cần sửa) ----
   build-docker:
     needs: test
     runs-on: ubuntu-latest
