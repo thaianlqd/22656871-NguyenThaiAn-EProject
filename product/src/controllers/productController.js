@@ -14,7 +14,7 @@ class ProductController {
 
   }
 
-  async createProduct(req, res, next) {
+  async createProduct(req, res, _next) { // <-- Đổi thành '_next'
     try {
       const token = req.headers.authorization;
       if (!token) {
@@ -96,7 +96,7 @@ class ProductController {
     return res.status(200).json(order);
   }
 
-  
+
 
   async getProducts(req, res, next) {
     try {
