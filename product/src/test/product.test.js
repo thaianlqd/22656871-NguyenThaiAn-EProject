@@ -37,7 +37,7 @@ describe("Products", () => {
 
     // Authenticate with the auth microservice to get a token
     const authRes = await chai
-      .request(AUTH_SERVICE_URL) // <-- ĐÃ SỬA THÀNH BIẾN
+      .request(AUTH_SERVICE_URL) // <-- ĐÃ SỬA THÀNH BIẾNN
       .post("/login")
       .send({ username: process.env.LOGIN_TEST_USER, password: process.env.LOGIN_TEST_PASSWORD });
 
