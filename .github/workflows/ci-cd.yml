@@ -296,7 +296,7 @@ jobs:
   # --- Job Build-Docker (Không cần sửa) ---
   build-docker:
     needs: test
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
