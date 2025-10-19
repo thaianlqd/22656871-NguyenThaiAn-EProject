@@ -148,6 +148,7 @@ services:
     env_file: ./auth/.env  # Load .env từ thư mục auth
     depends_on:
       - thaian_mongodb
+      - thaian_rabbitmq 
     restart: unless-stopped
     networks:
       - microservices-net
@@ -163,6 +164,7 @@ services:
     env_file: ./order/.env  # Load .env từ thư mục order
     depends_on:
       - thaian_mongodb
+      - thaian_rabbitmq
     restart: unless-stopped
     networks:
       - microservices-net
@@ -178,6 +180,7 @@ services:
     env_file: ./product/.env  # Load .env từ thư mục product
     depends_on:
       - thaian_mongodb
+      - thaian_rabbitmq
     restart: unless-stopped
     networks:
       - microservices-net

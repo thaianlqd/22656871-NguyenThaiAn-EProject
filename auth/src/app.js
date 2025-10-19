@@ -19,9 +19,6 @@ class App {
     await mongoose.connect(config.mongoURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      //hihi
-      bufferCommands: false,  // Thêm: Tắt buffering để tránh timeout
-      bufferMaxEntries: 0,    // Thêm: Không buffer entry
     });
     console.log("MongoDB connected");
   }

@@ -9,6 +9,7 @@ chai.use(chaiHttp);
 
 describe("Products", () => {
   let app;
+  let authToken; // Khai báo authToken ở đây
 
   before(async () => {
     app = new App();
@@ -16,18 +17,21 @@ describe("Products", () => {
 
     // Authenticate with the auth microservice to get a token
     const authRes = await chai
-      .request("http://localhost:3000")
+      // .request("http://localhost:3000")
+      .request("http://thaian_auth_service:3000") // <-- ĐÃ SỬA
       .post("/login")
       .send({ username: process.env.LOGIN_TEST_USER, password: process.env.LOGIN_TEST_PASSWORD });
 
     authToken = authRes.body.token;
-    console.log(authToken);
-    app.start();
+    // console.log(authToken);
+    console.log("Auth Token:", authToken); // Kiểm tra xem có lấy được token không
+    // app.start();
   });
 
   after(async () => {
     await app.disconnectDB();
-    app.stop();
+    // await app.closeMessageBroker(); // <-- Bạn nên có hàm này để đóng RabbitMQ
+    // app.stop();
   });
 
   describe("POST /products", () => {
@@ -39,7 +43,7 @@ describe("Products", () => {
       };
       const res = await chai
         .request(app.app)
-        .post("/api/products")
+        .post("/products")
         .set("Authorization", `Bearer ${authToken}`)
         .send({
             name: "Product 1",
@@ -61,7 +65,7 @@ describe("Products", () => {
       };
       const res = await chai
         .request(app.app)
-        .post("/api/products")
+        .post("/products")
         .set("Authorization", `Bearer ${authToken}`)
         .send(product);
 

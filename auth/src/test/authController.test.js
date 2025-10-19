@@ -1,3 +1,7 @@
+const mongoose = require('mongoose');
+
+
+
 const chai = require("chai");
 const chaiHttp = require("chai-http");
 const App = require("../app");
@@ -13,13 +17,13 @@ describe("User Authentication", () => {
   before(async () => {
     app = new App();
     await app.connectDB();
-    app.start();
+    // app.start();
   });
 
   after(async () => {
     await app.authController.authService.deleteTestUsers();
     await app.disconnectDB();
-    app.stop();
+    // app.stop();
   });
 
   describe("POST /register", () => {
@@ -77,3 +81,5 @@ describe("User Authentication", () => {
     });
   });
 });
+
+
