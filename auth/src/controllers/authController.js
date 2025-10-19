@@ -1,7 +1,5 @@
 const config = require("../config");
 
-
-
 const AuthService = require("../services/authService");
 
 /**
