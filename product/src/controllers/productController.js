@@ -238,8 +238,9 @@ class ProductController {
         order = this.ordersMap.get(orderId);
       }
 
-      // Delete the order from the map after processing to save memory
-      this.ordersMap.delete(orderId);
+      // // Delete the order from the map after processing to save memory
+      // this.ordersMap.delete(orderId);
+      
 
       if (!order || order.status !== 'completed') {
         console.log(`Order ${orderId} timed out.`);
