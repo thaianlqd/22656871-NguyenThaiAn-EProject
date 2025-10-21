@@ -96,7 +96,6 @@ const config = require("./config");
 class App {
   constructor() {
     this.app = express();
-    // SỬA LỖI: Khai báo các thuộc tính để lưu giữ kết nối
     this.connection = null;
     this.channel = null;
   }
@@ -119,40 +118,46 @@ class App {
   async setupOrderConsumer() {
     console.log("Order Service: Connecting to RabbitMQ...");
     try {
-      // SỬA LỖI: Lưu kết nối và kênh vào thuộc tính của class
       this.connection = await amqp.connect(config.rabbitMQURI);
       this.channel = await this.connection.createChannel();
 
       await this.channel.assertQueue(config.orderQueue, { durable: true });
       await this.channel.assertQueue(config.productQueue, { durable: true });
-      console.log("Order Service: Connected to RabbitMQ and queues asserted.");
+      console.log("Order Service: Connected to RabbitMQ and queues asserted. Waiting for messages...");
   
       this.channel.consume(config.orderQueue, async (data) => {
         if (data !== null) {
-          console.log("Order Service: Consuming message from 'orders' queue");
+          // --- BƯỚC DEBUG: Thêm log chi tiết ---
+          console.log("--- ORDER SERVICE: MESSAGE RECEIVED ---");
+          const messageContent = data.content.toString();
+          console.log("Raw message content:", messageContent);
+
           try {
-            const { products, username, orderId } = JSON.parse(data.content);
+            const { products, username, orderId } = JSON.parse(messageContent);
+            console.log(`Processing orderId: ${orderId} for user: ${username}`);
     
             const newOrder = new Order({
               products,
               user: username,
               totalPrice: products.reduce((acc, product) => acc + product.price, 0),
             });
+            console.log("Attempting to save order to DB...");
     
             await newOrder.save();
-            console.log("Order Service: Order saved to DB.");
+            console.log("Order saved to DB successfully!");
     
             this.channel.ack(data);
     
-            const { user, products: savedProducts, totalPrice } = newOrder.toJSON();
+            const responsePayload = { orderId, user: newOrder.user, products: newOrder.products, totalPrice: newOrder.totalPrice };
             this.channel.sendToQueue(
               config.productQueue,
-              Buffer.from(JSON.stringify({ orderId, user, products: savedProducts, totalPrice }))
+              Buffer.from(JSON.stringify(responsePayload))
             );
-            console.log("Order Service: Confirmation sent to 'products' queue.");
+            console.log("--- ORDER SERVICE: CONFIRMATION SENT ---");
 
           } catch (error) {
-            console.error("Order Service: Error processing message:", error);
+            console.error("!!! ORDER SERVICE: CRITICAL ERROR processing message !!!");
+            console.error(error); // In ra toàn bộ lỗi
             this.channel.nack(data, false, false); 
           }
         }
@@ -172,4 +177,6 @@ class App {
 }
 
 module.exports = App;
+
+
 
