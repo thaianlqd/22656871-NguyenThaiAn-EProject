@@ -400,30 +400,42 @@ jobs:
           echo "JWT_SECRET=ci_secret" >> order/.env
           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
 
-      # --- ĐÂY LÀ BƯỚC SỬA LỖI QUAN TRỌNG ---
+      # --- ĐÂY LÀ BƯỚC SỬA LỖI CUỐI CÙNG ---
       - name: Run Background Services and Wait
         run: |
-          # Chạy các service trong nền
-          cd auth && npm start &
-          cd order && npm start &
+          # Dùng nohup để chạy nền đáng tin cậy, log sẽ được ghi vào file nohup.out
+          echo "Starting Auth service in background..."
+          cd auth && nohup npm start &
           
-          # Đợi một chút để các tiến trình Node.js kịp khởi động
-          echo "Giving services 5 seconds to initialize..."
-          sleep 5
+          echo "Starting Order service in background..."
+          cd order && nohup npm start &
 
-          # Bây giờ mới bắt đầu chờ đợi
-          echo "Waiting for Auth service to be available..."
-          wait-on http://localhost:3000 -t 60000
+          # Dùng curl trong vòng lặp - cách làm "cổ điển" nhưng hiệu quả nhất
+          echo "Waiting for Auth service to respond to HTTP requests..."
+          for i in {1..30}; do
+            # -sS_f: im lặng khi thành công, báo lỗi khi thất bại
+            # --max-time 1: không chờ quá 1 giây mỗi lần thử
+            # Thử gọi một route có thật (POST /login) thay vì chỉ check port
+            if curl -sS_f --max-time 1 -X POST http://localhost:3000/login; then
+              echo "Auth service is responding!"
+              exit 0 # Thoát khỏi bước này với mã thành công
+            fi
+            echo "Attempt $i/30: Auth service not yet responsive. Retrying in 2 seconds..."
+            sleep 2
+          done
+          
+          # Nếu vòng lặp kết thúc mà vẫn không được, báo lỗi và in log
+          echo "::error::Auth service failed to start in time."
+          echo "--- Last 20 lines of Auth service log ---"
+          tail -n 20 auth/nohup.out || echo "nohup.out not found."
+          exit 1
 
-      # --- Chạy Tests (giữ nguyên) ---
-      - name: Run Auth Tests
-        run: cd auth && npm test
-
-      - name: Run Product Tests
-        run: cd product && npm test
-        
-      - name: Run Order Tests
-        run: cd order && npm test
+      # --- Chạy Tests ---
+      - name: Run Tests (Auth, Product, Order)
+        run: |
+          cd auth && npm test
+          cd ../product && npm test
+          cd ../order && npm test
 
   build-docker:
     needs: test
@@ -436,12 +448,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build and push Auth image
-        run: docker build -t thaianlqd050204/microservices-auth:latest --push ./auth
-      - name: Build and push Product image
-        run: docker build -t thaianlqd050204/microservices-product:latest --push ./product
-      - name: Build and push Order image
-        run: docker build -t thaianlqd050204/microservices-order:latest --push ./order
-      - name: Build and push Gateway image
-        run: docker build -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway
+      - name: Build and Push Images
+        run: |
+          docker build -t thaianlqd050204/microservices-auth:latest --push ./auth
+          docker build -t thaianlqd050204/microservices-product:latest --push ./product
+          docker build -t thaianlqd050204/microservices-order:latest --push ./order
+          docker build -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway
 
