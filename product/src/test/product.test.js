@@ -293,7 +293,6 @@
 
 
 //tets: thêm phần tạo hóa đơn
-
 const chai = require("chai");
 const chaiHttp = require("chai-http");
 const App = require("../app");
@@ -412,3 +411,5 @@ describe("Products", () => {
       expect(res.body.products[0]._id).to.equal(createdProducts[0]._id);
     });
   });
+}); // <-- DẤU NGOẶC BỊ THIẾU LÀ Ở ĐÂY
+
