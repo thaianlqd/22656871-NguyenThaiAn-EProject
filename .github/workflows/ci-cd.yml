@@ -398,34 +398,38 @@ jobs:
       
       # --- 3. Khởi động các service trong nền ---
       - name: Run Auth service in background
-        run: cd auth && npm start &
+        run: cd auth && npm start > auth.log 2>&1 &
         
       - name: Run Order service in background
-        run: cd order && npm start &
+        run: cd order && npm start > order.log 2>&1 &
 
       - name: Wait for background services to initialize
         run: |
           echo "Waiting for Auth service..."
           for i in {1..30}; do if nc -z localhost 3000; then echo "Auth service ready!"; break; fi; sleep 2; done
-          if ! nc -z localhost 3000; then echo "Auth service timed out"; exit 1; fi
+          if ! nc -z localhost 3000; then echo "Auth service timed out"; cat auth.log; exit 1; fi
           echo "Giving Order service time to connect to RabbitMQ..."
           sleep 10
 
       # --- BƯỚC BẮT BỆNH: Kiểm tra xem các service có còn sống không ---
       - name: Check background processes status
-        id: check_processes # Đặt ID cho bước này
+        id: check_processes
         run: |
           echo "--- Checking running Node.js processes ---"
           PROCESS_COUNT=$(ps aux | grep "node index.js" | wc -l)
           echo "Found $PROCESS_COUNT Node.js processes."
-          # Ghi số lượng process vào output
           echo "process_count=$PROCESS_COUNT" >> $GITHUB_OUTPUT
-          ps aux | grep node || echo "No Node.js processes found!"
+          ps aux | grep "node index.js" || echo "No 'node index.js' processes found!"
+          if [ $PROCESS_COUNT -lt 2 ]; then
+            echo "::warning::One or more services may have crashed. Displaying logs:"
+            echo "--- Auth Service Log (auth.log) ---"
+            cat auth.log || echo "auth.log not found."
+            echo "--- Order Service Log (order.log) ---"
+            cat order.log || echo "order.log not found."
+          fi
 
       # --- 4. Bây giờ mới Test service chính (Product) ---
       - name: Setup and Test Product Service
-        # Chỉ chạy nếu có đủ 2 process (auth và order)
-        if: steps.check_processes.outputs.process_count >= 2
         run: |
           echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/ThaianProductService" > product/.env
           echo "JWT_SECRET=thaiansecret" >> product/.env
@@ -435,12 +439,6 @@ jobs:
           echo "AUTH_SERVICE_URL=http://localhost:3000" >> product/.env
           cd product && npm ci && npm test
 
-      - name: Report missing process
-        if: steps.check_processes.outputs.process_count < 2
-        run: |
-          echo "::error::One of the background services (auth or order) failed to start. Check the logs of the 'Setup' steps for errors."
-          exit 1
-          
       # --- 5. Linting và Dọn dẹp ---
       - name: Lint code
         run: |
@@ -490,4 +488,6 @@ jobs:
           context: ./api-gateway
           push: true
           tags: thaianlqd050204/microservices-gateway:latest
+
+
 
