@@ -135,6 +135,212 @@
 
 # mong la dc
 
+# name: CI/CD Pipeline for Microservices
+
+# on:
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
+
+# jobs:
+#   test:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+#           cache: 'npm'
+
+#       # --- 1. Khởi động MongoDB ---
+#       - name: Pull MongoDB image
+#         run: docker pull mongo:7.0
+
+#       - name: Start MongoDB container
+#         run: |
+#           docker run -d --name ci-mongodb -p 27017:27017 mongo:7.0 --noauth
+
+#       - name: Wait for MongoDB ready
+#         run: |
+#           echo "Waiting for MongoDB..."
+#           for i in {1..30}; do
+#             if nc -z localhost 27017; then 
+#               echo "MongoDB port open!"
+#               # Sử dụng --eval "db.adminCommand('ping')" cho các phiên bản mongo mới hơn
+#               if docker exec ci-mongodb mongosh --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
+#                 echo "MongoDB ready!"
+#                 break
+#               fi
+#             fi
+#             echo "Waiting for MongoDB... ($i/30)"
+#             sleep 2
+#           done
+#           if ! nc -z localhost 27017; then 
+#             echo "MongoDB not ready"
+#             docker logs ci-mongodb
+#             exit 1
+#           fi
+
+#       # --- 2. Khởi động RabbitMQ (BƯỚC BỊ THIẾU) ---
+#       - name: Pull RabbitMQ image
+#         run: docker pull rabbitmq:3-management-alpine
+
+#       - name: Start RabbitMQ container
+#         run: |
+#           docker run -d --name ci-rabbitmq -p 5672:5672 -p 15672:15672 \
+#             -e RABBITMQ_DEFAULT_USER=guest \
+#             -e RABBITMQ_DEFAULT_PASS=guest \
+#             rabbitmq:3-management-alpine
+
+#       - name: Wait for RabbitMQ ready
+#         run: |
+#           echo "Waiting for RabbitMQ..."
+#           for i in {1..30}; do
+#             if nc -z localhost 5672; then
+#               echo "RabbitMQ port 5672 open!"
+#               break
+#             fi
+#             echo "Waiting for RabbitMQ... ($i/30)"
+#             sleep 2
+#           done
+#           if ! nc -z localhost 5672; then
+#             echo "RabbitMQ not ready"
+#             docker logs ci-rabbitmq
+#             exit 1
+#           fi
+
+#       # --- 3. Test Service Auth ---
+#       - name: Create .env for Auth
+#         run: |
+#           echo "MONGODB_AUTH_URI=mongodb://localhost:27017/ThaianAuthService" > auth/.env
+#           echo "JWT_SECRET=thaiansecret" >> auth/.env
+#           # Thêm RabbitMQ nếu Auth Service của bạn cần
+#           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> auth/.env
+
+#       - name: Install dependencies for Auth
+#         run: cd auth && npm ci
+
+#       - name: Run tests for Auth
+#         run: cd auth && npm test
+
+#       # --- 4. Chạy Auth Service trong nền (BƯỚC BỊ THIẾU) ---
+#       - name: Run Auth service in background
+#         run: cd auth && npm start &
+
+#       - name: Wait for Auth service
+#         run: |
+#           echo "Waiting for Auth service..."
+#           for i in {1..30}; do
+#             if nc -z localhost 3000; then
+#               echo "Auth service (port 3000) is ready!"
+#               break
+#             fi
+#             echo "Waiting for Auth service... ($i/30)"
+#             sleep 2
+#           done
+#           if ! nc -z localhost 3000; then
+#             echo "Auth service timed out"
+#             exit 1
+#           fi
+
+#       # --- 5. Test Service Product (ĐÃ SỬA .ENV) ---
+#       - name: Create .env for Product
+#         run: |
+#           echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/ThaianProductService" > product/.env
+#           echo "JWT_SECRET=thaiansecret" >> product/.env
+#           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
+#           echo "LOGIN_TEST_USER=thaian9" >> product/.env
+#           echo "LOGIN_TEST_PASSWORD=password123" >> product/.env
+#           echo "AUTH_SERVICE_URL=http://localhost:3000" >> product/.env
+
+#       - name: Install dependencies for Product
+#         run: cd product && npm ci
+
+#       - name: Run tests for Product
+#         run: cd product && npm test
+
+#       # --- 6. Test Service Order (ĐÃ SỬA .ENV) ---
+#       - name: Create .env for Order
+#         run: |
+#           echo "MONGODB_ORDER_URI=mongodb://localhost:27017/ThaianOrderService" > order/.env
+#           echo "JWT_SECRET=thaiansecret" >> order/.env
+#           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
+#           # Thêm các biến .env khác nếu Order cần test (ví dụ: LOGIN_TEST_USER)
+
+#       - name: Install dependencies for Order
+#         run: cd order && npm ci
+
+#       - name: Run tests for Order
+#         run: cd order && npm test
+
+#       # --- 7. Linting ---
+#       - name: Lint code
+#         run: |
+#           # Cài đặt phiên bản 8 của ESLint để tương thích với file .eslintrc.js
+#           npm install -g eslint@8
+#           eslint . --ext .js
+
+#       # --- 8. Dọn dẹp (THÊM DỌN DẸP RABBITMQ) ---
+#       - name: Cleanup MongoDB container
+#         if: always() # Luôn chạy, dù pass/fail
+#         run: docker stop ci-mongodb && docker rm ci-mongodb
+
+#       - name: Cleanup RabbitMQ container
+#         if: always() # Luôn chạy, dù pass/fail
+#         run: docker stop ci-rabbitmq && docker rm ci-rabbitmq
+
+#   # --- Job Build-Docker (Không cần sửa) ----
+#   build-docker:
+#     needs: test
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v3
+
+#       - name: Login to Docker Hub
+#         uses: docker/login-action@v3
+#         with:
+#           username: ${{ secrets.DOCKER_USERNAME }}
+#           password: ${{ secrets.DOCKER_PASSWORD }}
+
+#       - name: Build and push Auth image
+#         uses: docker/build-push-action@v5
+#         with:
+#           context: ./auth
+#           push: true
+#           tags: thaianlqd050204/microservices-auth:latest
+
+#       - name: Build and push Product image
+#         uses: docker/build-push-action@v5
+#         with:
+#           context: ./product
+#           push: true
+#           tags: thaianlqd050204/microservices-product:latest
+
+#       - name: Build and push Order image
+#         uses: docker/build-push-action@v5
+#         with:
+#           context: ./order
+#           push: true
+#           tags: thaianlqd050204/microservices-order:latest
+
+#       - name: Build and push Gateway image
+#         uses: docker/build-push-action@v5
+#         with:
+#           context: ./api-gateway
+#           push: true
+#           tags: thaianlqd050204/microservices-gateway:latest
+
+
+
+
+
+##=> thai an - update:
 name: CI/CD Pipeline for Microservices
 
 on:
@@ -146,6 +352,17 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Thêm service containers để Docker quản lý dependency tốt hơn
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        ports:
+          - 5672:5672
+
     steps:
       - uses: actions/checkout@v4
 
@@ -154,147 +371,60 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-
-      # --- 1. Khởi động MongoDB ---
-      - name: Pull MongoDB image
-        run: docker pull mongo:7.0
-
-      - name: Start MongoDB container
+          
+      - name: Wait for Services to be Ready
         run: |
-          docker run -d --name ci-mongodb -p 27017:27017 mongo:7.0 --noauth
+          echo "Waiting for dependencies..."
+          npm install -g wait-on
+          wait-on tcp:27017 tcp:5672 -t 30000
 
-      - name: Wait for MongoDB ready
+      # --- Cài đặt và Test song song ---
+      - name: Install All Dependencies
         run: |
-          echo "Waiting for MongoDB..."
-          for i in {1..30}; do
-            if nc -z localhost 27017; then 
-              echo "MongoDB port open!"
-              # Sử dụng --eval "db.adminCommand('ping')" cho các phiên bản mongo mới hơn
-              if docker exec ci-mongodb mongosh --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
-                echo "MongoDB ready!"
-                break
-              fi
-            fi
-            echo "Waiting for MongoDB... ($i/30)"
-            sleep 2
-          done
-          if ! nc -z localhost 27017; then 
-            echo "MongoDB not ready"
-            docker logs ci-mongodb
-            exit 1
-          fi
-
-      # --- 2. Khởi động RabbitMQ (BƯỚC BỊ THIẾU) ---
-      - name: Pull RabbitMQ image
-        run: docker pull rabbitmq:3-management-alpine
-
-      - name: Start RabbitMQ container
+          cd auth && npm install && cd ..
+          cd product && npm install && cd ..
+          cd order && npm install && cd ..
+          
+      # --- Chạy các service cần thiết trong nền ---
+      - name: Create .env files
         run: |
-          docker run -d --name ci-rabbitmq -p 5672:5672 -p 15672:15672 \
-            -e RABBITMQ_DEFAULT_USER=guest \
-            -e RABBITMQ_DEFAULT_PASS=guest \
-            rabbitmq:3-management-alpine
-
-      - name: Wait for RabbitMQ ready
-        run: |
-          echo "Waiting for RabbitMQ..."
-          for i in {1..30}; do
-            if nc -z localhost 5672; then
-              echo "RabbitMQ port 5672 open!"
-              break
-            fi
-            echo "Waiting for RabbitMQ... ($i/30)"
-            sleep 2
-          done
-          if ! nc -z localhost 5672; then
-            echo "RabbitMQ not ready"
-            docker logs ci-rabbitmq
-            exit 1
-          fi
-
-      # --- 3. Test Service Auth ---
-      - name: Create .env for Auth
-        run: |
-          echo "MONGODB_AUTH_URI=mongodb://localhost:27017/ThaianAuthService" > auth/.env
-          echo "JWT_SECRET=thaiansecret" >> auth/.env
-          # Thêm RabbitMQ nếu Auth Service của bạn cần
+          echo "MONGODB_AUTH_URI=mongodb://localhost:27017/ci_auth" > auth/.env
+          echo "JWT_SECRET=ci_secret" >> auth/.env
           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> auth/.env
 
-      - name: Install dependencies for Auth
-        run: cd auth && npm ci
+          echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/ci_product" > product/.env
+          echo "JWT_SECRET=ci_secret" >> product/.env
+          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
+          echo "LOGIN_TEST_USER=ci_user" >> product/.env
+          echo "LOGIN_TEST_PASSWORD=ci_password" >> product/.env
+          echo "AUTH_SERVICE_URL=http://localhost:3000" >> product/.env
+          
+          echo "MONGODB_ORDER_URI=mongodb://localhost:27017/ci_order" > order/.env
+          echo "JWT_SECRET=ci_secret" >> order/.env
+          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
 
-      - name: Run tests for Auth
+      - name: Run Services in Background
+        run: |
+          cd auth && npm start &
+          cd order && npm start &
+          
+      - name: Wait for Background Services
+        run: wait-on http://localhost:3000 -t 30000
+
+      # --- Chạy Tests ---
+      - name: Run Auth Tests
         run: cd auth && npm test
 
-      # --- 4. Chạy Auth Service trong nền (BƯỚC BỊ THIẾU) ---
-      - name: Run Auth service in background
-        run: cd auth && npm start &
-
-      - name: Wait for Auth service
-        run: |
-          echo "Waiting for Auth service..."
-          for i in {1..30}; do
-            if nc -z localhost 3000; then
-              echo "Auth service (port 3000) is ready!"
-              break
-            fi
-            echo "Waiting for Auth service... ($i/30)"
-            sleep 2
-          done
-          if ! nc -z localhost 3000; then
-            echo "Auth service timed out"
-            exit 1
-          fi
-
-      # --- 5. Test Service Product (ĐÃ SỬA .ENV) ---
-      - name: Create .env for Product
-        run: |
-          echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/ThaianProductService" > product/.env
-          echo "JWT_SECRET=thaiansecret" >> product/.env
-          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
-          echo "LOGIN_TEST_USER=thaian9" >> product/.env
-          echo "LOGIN_TEST_PASSWORD=password123" >> product/.env
-          echo "AUTH_SERVICE_URL=http://localhost:3000" >> product/.env
-
-      - name: Install dependencies for Product
-        run: cd product && npm ci
-
-      - name: Run tests for Product
+      - name: Run Product Tests
         run: cd product && npm test
-
-      # --- 6. Test Service Order (ĐÃ SỬA .ENV) ---
-      - name: Create .env for Order
-        run: |
-          echo "MONGODB_ORDER_URI=mongodb://localhost:27017/ThaianOrderService" > order/.env
-          echo "JWT_SECRET=thaiansecret" >> order/.env
-          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
-          # Thêm các biến .env khác nếu Order cần test (ví dụ: LOGIN_TEST_USER)
-
-      - name: Install dependencies for Order
-        run: cd order && npm ci
-
-      - name: Run tests for Order
+        
+      - name: Run Order Tests
         run: cd order && npm test
 
-      # --- 7. Linting ---
-      - name: Lint code
-        run: |
-          # Cài đặt phiên bản 8 của ESLint để tương thích với file .eslintrc.js
-          npm install -g eslint@8
-          eslint . --ext .js
-
-      # --- 8. Dọn dẹp (THÊM DỌN DẸP RABBITMQ) ---
-      - name: Cleanup MongoDB container
-        if: always() # Luôn chạy, dù pass/fail
-        run: docker stop ci-mongodb && docker rm ci-mongodb
-
-      - name: Cleanup RabbitMQ container
-        if: always() # Luôn chạy, dù pass/fail
-        run: docker stop ci-rabbitmq && docker rm ci-rabbitmq
-
-  # --- Job Build-Docker (Không cần sửa) ----
+  # --- Job Build-Docker (giữ nguyên) ----
   build-docker:
     needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' # Chỉ build khi push lên main
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -309,34 +439,13 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Auth image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./auth
-          push: true
-          tags: thaianlqd050204/microservices-auth:latest
+        run: docker build -t thaianlqd050204/microservices-auth:latest --push ./auth
 
       - name: Build and push Product image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./product
-          push: true
-          tags: thaianlqd050204/microservices-product:latest
+        run: docker build -t thaianlqd050204/microservices-product:latest --push ./product
 
       - name: Build and push Order image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./order
-          push: true
-          tags: thaianlqd050204/microservices-order:latest
+        run: docker build -t thaianlqd050204/microservices-order:latest --push ./order
 
       - name: Build and push Gateway image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./api-gateway
-          push: true
-          tags: thaianlqd050204/microservices-gateway:latest
-
-
-
-
-
+        run: docker build -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway
