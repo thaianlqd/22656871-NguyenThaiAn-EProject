@@ -78,6 +78,50 @@ describe("User Authentication", () => {
       expect(res.body).to.have.property("message", "Invalid username or password");
     });
   });
+
+    // Thêm vào cuối file auth/src/test/authController.test.js
+
+  describe("GET /dashboard", () => {
+      let token;
+
+      // Trước khi chạy test cho dashboard, hãy đăng nhập để lấy token
+      before(async () => {
+          const res = await chai
+              .request(app.app)
+              .post("/login")
+              .send({ username: "testuser", password: "password" });
+          token = res.body.token;
+      });
+
+      it("should allow access with a valid token", async () => {
+          const res = await chai
+              .request(app.app)
+              .get("/dashboard")
+              .set("authorization", `Bearer ${token}`); // Gửi token trong header
+
+          expect(res).to.have.status(200);
+          expect(res.body).to.have.property("message", "Welcome to dashboard");
+      });
+
+      it("should deny access without a token", async () => {
+          const res = await chai
+              .request(app.app)
+              .get("/dashboard");
+
+          // Mong đợi lỗi 401 Unauthorized vì không có token
+          expect(res).to.have.status(401); 
+      });
+
+      it("should deny access with an invalid token", async () => {
+          const res = await chai
+              .request(app.app)
+              .get("/dashboard")
+              .set("authorization", "Bearer anhtailatinh"); // Một token bậy
+
+          // Mong đợi lỗi 400 Bad Request (vì token không hợp lệ)
+          expect(res).to.have.status(400); 
+      });
+  });
 });
 
 
