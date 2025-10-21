@@ -400,34 +400,30 @@ jobs:
           echo "JWT_SECRET=ci_secret" >> order/.env
           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
 
-      # --- ĐÂY LÀ BƯỚC SỬA LỖI CUỐI CÙNG ---
+      # --- PHIÊN BẢN SỬA LỖI CUỐI CÙNG ---
       - name: Run Background Services and Wait
         run: |
-          # Dùng nohup để chạy nền đáng tin cậy, log sẽ được ghi vào file nohup.out
           echo "Starting Auth service in background..."
-          cd auth && nohup npm start &
+          cd auth && nohup npm start > nohup.out 2>&1 &
           
           echo "Starting Order service in background..."
-          cd order && nohup npm start &
-
-          # Dùng curl trong vòng lặp - cách làm "cổ điển" nhưng hiệu quả nhất
-          echo "Waiting for Auth service to respond to HTTP requests..."
+          cd order && nohup npm start > nohup.out 2>&1 &
+          
+          echo "Waiting for Auth service to respond..."
           for i in {1..30}; do
-            # -sS_f: im lặng khi thành công, báo lỗi khi thất bại
-            # --max-time 1: không chờ quá 1 giây mỗi lần thử
-            # Thử gọi một route có thật (POST /login) thay vì chỉ check port
-            if curl -sS_f --max-time 1 -X POST http://localhost:3000/login; then
+            # SỬA LỖI: Dùng -sS, bỏ _ và f. Chuyển stdout sang /dev/null
+            # Lệnh này sẽ thành công miễn là server trả về bất kỳ phản hồi HTTP nào (kể cả 400).
+            if curl -sS --max-time 1 http://localhost:3000/login -X POST > /dev/null 2>&1; then
               echo "Auth service is responding!"
-              exit 0 # Thoát khỏi bước này với mã thành công
+              exit 0
             fi
             echo "Attempt $i/30: Auth service not yet responsive. Retrying in 2 seconds..."
             sleep 2
           done
           
-          # Nếu vòng lặp kết thúc mà vẫn không được, báo lỗi và in log
           echo "::error::Auth service failed to start in time."
           echo "--- Last 20 lines of Auth service log ---"
-          tail -n 20 auth/nohup.out || echo "nohup.out not found."
+          tail -n 20 auth/nohup.out || echo "auth/nohup.out not found."
           exit 1
 
       # --- Chạy Tests ---
@@ -454,4 +450,5 @@ jobs:
           docker build -t thaianlqd050204/microservices-product:latest --push ./product
           docker build -t thaianlqd050204/microservices-order:latest --push ./order
           docker build -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway
+
 
