@@ -68,24 +68,25 @@ class MessageBroker {
   }
 
   async connect() {
+    // Ngăn việc kết nối lại nếu đã có kết nối
+    if (this.channel) {
+      return;
+    }
+
     console.log("Connecting to RabbitMQ...");
     try {
-      // SỬA LỖI: Đọc URI từ biến môi trường thay vì hard-code.
-      // Trong CI, nó sẽ là "amqp://guest:guest@localhost:5672".
-      // Trong Docker Compose, nó sẽ là "amqp://guest:guest@thaian_rabbitmq:5672".
-      const amqpServer = process.env.RABBITMQ_URI;
-      
-      const connection = await amqp.connect(amqpServer);
+      // Đọc URI từ biến môi trường, nếu không có thì dùng localhost
+      const connection = await amqp.connect(process.env.RABBITMQ_URI || 'amqp://localhost');
       this.channel = await connection.createChannel();
       
-      // Đảm bảo cả hai queue đều tồn tại
-      await this.channel.assertQueue("products");
-      await this.channel.assertQueue("orders");
+      // Khai báo cả 2 queue mà service này tương tác
+      await this.channel.assertQueue("orders", { durable: false });
+      await this.channel.assertQueue("products", { durable: false });
 
       console.log("RabbitMQ connected and queues asserted.");
     } catch (err) {
       console.error("Failed to connect to RabbitMQ:", err.message);
-      // Ném lỗi ra ngoài để `before` hook trong test biết là đã thất bại
+      // Ném lỗi ra ngoài để báo cho nơi gọi biết là đã thất bại
       throw err;
     }
   }
@@ -95,16 +96,9 @@ class MessageBroker {
       console.error("No RabbitMQ channel available to publish.");
       return;
     }
-
-    try {
-      this.channel.sendToQueue(
-        queue,
-        Buffer.from(JSON.stringify(message))
-      );
-      console.log(`Message sent to queue: ${queue}`);
-    } catch (err) {
-      console.error("Failed to publish message:", err);
-    }
+    // Gửi message và log lại
+    this.channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)));
+    console.log(`Message sent to queue: ${queue}`);
   }
 
   consumeMessage(queue, callback) {
@@ -112,21 +106,16 @@ class MessageBroker {
       console.error("No RabbitMQ channel available to consume.");
       return;
     }
-
-    try {
-      this.channel.consume(queue, (message) => {
-        if (message !== null) {
-            const content = message.content.toString();
-            const parsedContent = JSON.parse(content);
-            callback(parsedContent);
-            this.channel.ack(message);
-        }
-      });
-    } catch (err) {
-      console.error("Failed to consume message:", err);
-    }
+    // Bắt đầu lắng nghe message
+    this.channel.consume(queue, (message) => {
+      if (message !== null) {
+        callback(JSON.parse(message.content.toString()));
+        this.channel.ack(message);
+      }
+    });
   }
 }
 
-// Xuất ra một instance duy nhất (singleton)
+// Xuất ra một thực thể duy nhất (singleton)
 module.exports = new MessageBroker();
+
