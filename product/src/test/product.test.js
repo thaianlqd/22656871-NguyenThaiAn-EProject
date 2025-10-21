@@ -182,8 +182,113 @@
 // });
 
 
-// test: thêm phần get
+// test: thêm phần get product
 
+// const chai = require("chai");
+// const chaiHttp = require("chai-http");
+// const App = require("../app");
+// const expect = chai.expect;
+// require("dotenv").config();
+
+// chai.use(chaiHttp);
+
+// describe("Products", () => {
+//   let app;
+//   let authToken;
+//   // BIẾN MỚI: Dùng để lưu các sản phẩm đã được tạo trong test
+//   let createdProducts = []; 
+
+//   before(async () => {
+//     app = new App();
+//     // Giả sử app.init() đã được thêm vào để xử lý race condition
+//     if (app.init) {
+//         await app.init();
+//     } else {
+//         // Fallback cho cấu trúc cũ
+//         await Promise.all([app.connectDB(), app.setupMessageBroker()]);
+//     }
+
+//     const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3000';
+//     const TEST_USER = {
+//         username: process.env.LOGIN_TEST_USER, 
+//         password: process.env.LOGIN_TEST_PASSWORD
+//     };
+
+//     try {
+//       await chai.request(AUTH_SERVICE_URL).post("/register").send(TEST_USER);
+//     } catch (err) { /* Bỏ qua lỗi nếu user đã tồn tại */ }
+
+//     const authRes = await chai.request(AUTH_SERVICE_URL).post("/login").send(TEST_USER);
+//     authToken = authRes.body.token;
+//   });
+
+//   after(async () => {
+//       if (app.stop) {
+//           await app.stop();
+//       } else {
+//           await app.disconnectDB();
+//       }
+//   });
+
+//   describe("POST /products", () => {
+//     it("should create a new product", async () => {
+//       const product = {
+//         name: "Test Book",
+//         description: "A very good book",
+//         price: 15,
+//       };
+//       const res = await chai
+//         .request(app.app)
+//         .post("/products")
+//         .set("Authorization", `Bearer ${authToken}`)
+//         .send(product);
+
+//       expect(res).to.have.status(201);
+//       expect(res.body).to.have.property("_id");
+//       expect(res.body.name).to.equal(product.name);
+
+//       // THÊM MỚI: Lưu sản phẩm vừa tạo vào biến để dùng cho test GET
+//       createdProducts.push(res.body);
+//     });
+
+//     it("should return an error if name is missing", async () => {
+//       const product = {
+//         description: "Description of Product 1",
+//         price: 10.99,
+//       };
+//       const res = await chai
+//         .request(app.app)
+//         .post("/products")
+//         .set("Authorization", `Bearer ${authToken}`)
+//         .send(product);
+
+//       expect(res).to.have.status(400);
+//     });
+//   });
+
+//   // --- PHẦN MỚI THÊM VÀO ---
+//   describe("GET /products", () => {
+//     it("should return a list of products", async () => {
+//       const res = await chai
+//         .request(app.app)
+//         .get("/products")
+//         .set("Authorization", `Bearer ${authToken}`);
+
+//       // Kiểm tra xem request có thành công không
+//       expect(res).to.have.status(200);
+
+//       // Kiểm tra xem kết quả trả về có phải là một mảng không
+//       expect(res.body).to.be.an("array");
+
+//       // Kiểm tra xem mảng trả về có chứa sản phẩm mà chúng ta đã tạo ở trên không
+//       const foundProduct = res.body.find(p => p._id === createdProducts[0]._id);
+//       expect(foundProduct).to.not.be.undefined;
+//       expect(foundProduct.name).to.equal("Test Book");
+//     });
+//   });
+// });
+
+//=> thai an - update: đặt hàng
 const chai = require("chai");
 const chaiHttp = require("chai-http");
 const App = require("../app");
@@ -195,17 +300,17 @@ chai.use(chaiHttp);
 describe("Products", () => {
   let app;
   let authToken;
-  // BIẾN MỚI: Dùng để lưu các sản phẩm đã được tạo trong test
+  // BIẾN NÀY RẤT QUAN TRỌNG: Dùng để lưu sản phẩm đã tạo
   let createdProducts = []; 
+  // BIẾN MỚI: Dùng để lưu orderId
+  let orderId = null;
 
   before(async () => {
     app = new App();
-    // Giả sử app.init() đã được thêm vào để xử lý race condition
     if (app.init) {
-        await app.init();
+      await app.init();
     } else {
-        // Fallback cho cấu trúc cũ
-        await Promise.all([app.connectDB(), app.setupMessageBroker()]);
+      await Promise.all([app.connectDB(), app.setupMessageBroker()]);
     }
 
     const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://localhost:3000';
@@ -247,7 +352,7 @@ describe("Products", () => {
       expect(res.body).to.have.property("_id");
       expect(res.body.name).to.equal(product.name);
 
-      // THÊM MỚI: Lưu sản phẩm vừa tạo vào biến để dùng cho test GET
+      // Lưu sản phẩm vừa tạo vào biến để dùng cho các test sau
       createdProducts.push(res.body);
     });
 
@@ -266,7 +371,6 @@ describe("Products", () => {
     });
   });
 
-  // --- PHẦN MỚI THÊM VÀO ---
   describe("GET /products", () => {
     it("should return a list of products", async () => {
       const res = await chai
@@ -274,20 +378,45 @@ describe("Products", () => {
         .get("/products")
         .set("Authorization", `Bearer ${authToken}`);
 
-      // Kiểm tra xem request có thành công không
       expect(res).to.have.status(200);
-
-      // Kiểm tra xem kết quả trả về có phải là một mảng không
       expect(res.body).to.be.an("array");
 
-      // Kiểm tra xem mảng trả về có chứa sản phẩm mà chúng ta đã tạo ở trên không
+      // Kiểm tra xem mảng trả về có chứa sản phẩm đã tạo ở trên không
       const foundProduct = res.body.find(p => p._id === createdProducts[0]._id);
       expect(foundProduct).to.not.be.undefined;
       expect(foundProduct.name).to.equal("Test Book");
     });
   });
-});
 
+  // --- PHẦN MỚI THÊM VÀO ĐỂ TEST ĐẶT HÀNG ---
+  describe("POST /products/buy", () => {
+    it("should create a new order and receive a completion status", async () => {
+      // Đảm bảo rằng chúng ta đã có sản phẩm để đặt hàng từ test trước
+      if (createdProducts.length === 0) {
+        throw new Error("Cannot run order test without a product.");
+      }
+
+      const productToOrder = createdProducts[0];
+
+      const res = await chai
+        .request(app.app)
+        .post("/products/buy")
+        .set("Authorization", `Bearer ${authToken}`)
+        .send({ ids: [productToOrder._id] }); // Gửi mảng chứa ID của sản phẩm
+
+      // Kiểm tra các điều kiện của một đơn hàng thành công
+      expect(res).to.have.status(201);
+      expect(res.body).to.have.property("status", "completed");
+      expect(res.body).to.have.property("totalPrice", productToOrder.price);
+      expect(res.body.products).to.be.an("array").with.lengthOf(1);
+      expect(res.body.products[0]._id).to.equal(productToOrder._id);
+
+      // Lưu lại orderId để dùng cho test tiếp theo
+      orderId = res.body.orderId; 
+    });
+  });
+
+});
 
 
 
