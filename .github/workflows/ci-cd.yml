@@ -396,19 +396,19 @@ jobs:
       
       # --- 3. Khởi động các service trong nền và GHI LẠI LOG ---
       - name: Run Auth service in background
-        run: cd auth && npm start > auth.log 2>&1 &
+        run: 'cd auth && npm start > auth.log 2>&1 &'
         
       - name: Run Order service in background
-        run: cd order && npm start > order.log 2>&1 &
+        run: 'cd order && npm start > order.log 2>&1 &'
 
       - name: Wait for background services to initialize
         run: |
           echo "Waiting for Auth service..."
           for i in {1..30}; do if nc -z localhost 3000; then echo "Auth service ready!"; break; fi; sleep 2; done
-          if ! nc -z localhost 3000; then echo "Auth service timed out"; cat auth.log; exit 1; fi
+          if ! nc -z localhost 3000; then echo "Auth service timed out"; cat auth/auth.log; exit 1; fi
           echo "Giving Order service time to connect to RabbitMQ..."
           sleep 10
-      
+
       # --- 4. Bây giờ mới Test service chính (Product) ---
       - name: Setup and Test Product Service
         run: |
@@ -426,9 +426,9 @@ jobs:
         run: |
           echo "--- Displaying logs from background services ---"
           echo "--- Auth Service Log (auth.log) ---"
-          cat auth.log || echo "auth.log not found."
+          cat auth/auth.log || echo "auth.log not found."
           echo "--- Order Service Log (order.log) ---"
-          cat order.log || echo "order.log not found."
+          cat order/order.log || echo "order.log not found."
 
       # --- 6. Linting và Dọn dẹp ---
       - name: Lint code
@@ -479,9 +479,4 @@ jobs:
           context: ./api-gateway
           push: true
           tags: thaianlqd050204/microservices-gateway:latest
-
-
-
-
-
 
