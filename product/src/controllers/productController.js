@@ -12,26 +12,32 @@ class ProductController {
     this.getOrderStatus = this.getOrderStatus.bind(this);
     this.ordersMap = new Map();
 
-    // // SỬA LỖI: Gọi hàm lắng nghe chỉ một lần ở đây
-    // this.listenForOrderCompletion();
+    // SỬA LỖI: Không còn tự động lắng nghe ở đây nữa.
+    // Việc lắng nghe sẽ được kích hoạt từ một nơi khác (app.js) sau khi kết nối đã sẵn sàng.
   }
 
-  // // SỬA LỖI: Tạo một hàm riêng để lắng nghe RabbitMQ
-  // listenForOrderCompletion() {
-  //   messageBroker.consumeMessage("products", (orderData) => {
-  //     try {
-  //       const { orderId } = orderData;
-  //       const order = this.ordersMap.get(orderId);
-  //       if (order) {
-  //         // Cập nhật trạng thái đơn hàng trong bộ nhớ tạm
-  //         this.ordersMap.set(orderId, { ...order, ...orderData, status: 'completed' });
-  //         console.log(`Order ${orderId} status updated to completed.`);
-  //       }
-  //     } catch (error) {
-  //         console.error("Error processing message from 'products' queue:", error);
-  //     }
-  //   });
-  // }
+  // SỬA LỖI: Tạo một hàm riêng để lắng nghe RabbitMQ
+  // Hàm này sẽ được gọi bởi app.js SAU KHI RabbitMQ đã kết nối thành công.
+  listenForMessages() {
+    console.log("Product Controller is now listening for messages...");
+    messageBroker.consumeMessage("products", (orderData) => {
+      try {
+        if (!orderData || !orderData.orderId) {
+            console.warn("Received invalid message from 'products' queue:", orderData);
+            return;
+        }
+        const { orderId } = orderData;
+        const order = this.ordersMap.get(orderId);
+        if (order) {
+          // Cập nhật trạng thái và toàn bộ dữ liệu đơn hàng trong bộ nhớ tạm
+          this.ordersMap.set(orderId, { ...order, ...orderData, status: 'completed' });
+          console.log(`Order ${orderId} status updated to completed.`);
+        }
+      } catch (error) {
+          console.error("Error processing message from 'products' queue:", error);
+      }
+    });
+  }
 
   async createProduct(req, res, _next) { // <-- Đổi thành '_next'
     try {
@@ -79,20 +85,22 @@ class ProductController {
         orderId, // include the order ID in the message to orders queue
       });
 
-      messageBroker.consumeMessage("products", (data) => {
-        const orderData = JSON.parse(JSON.stringify(data));
-        const { orderId } = orderData;
-        const order = this.ordersMap.get(orderId);
-        if (order) {
-          // update the order in the map
-          this.ordersMap.set(orderId, { ...order, ...orderData, status: 'completed' });
-          console.log("Updated order:", order);
-        }
-      });
+      //test nha
+      // messageBroker.consumeMessage("products", (data) => {
+      //   const orderData = JSON.parse(JSON.stringify(data));
+      //   const { orderId } = orderData;
+      //   const order = this.ordersMap.get(orderId);
+      //   if (order) {
+      //     // update the order in the map
+      //     this.ordersMap.set(orderId, { ...order, ...orderData, status: 'completed' });
+      //     console.log("Updated order:", order);
+      //   }
+      // });
       
   
       // Long polling until order is completed
       let order = this.ordersMap.get(orderId);
+      
       while (order.status !== 'completed') {
         await new Promise(resolve => setTimeout(resolve, 1000)); // wait for 1 second before checking status again
         order = this.ordersMap.get(orderId);
