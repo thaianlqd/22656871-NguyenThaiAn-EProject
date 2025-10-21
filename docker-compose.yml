@@ -92,11 +92,11 @@
 
 # test thử
 
-version: "3.9"
+# version: "3.9"
 
 services:
   thaian_rabbitmq:
-    image: rabbitmq:4-management
+    image: rabbitmq:3-management-alpine
     container_name: thaian_rabbitmq
     ports:
       - "5672:5672"
@@ -109,6 +109,13 @@ services:
     restart: unless-stopped
     networks:
       - microservices-net
+    # --- THÊM MỚI ---
+    # Healthcheck để đảm bảo RabbitMQ sẵn sàng trước khi các service khác khởi động
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   thaian_mongodb:
     image: mongo:7.0
@@ -120,6 +127,11 @@ services:
     restart: unless-stopped
     networks:
       - microservices-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   thaian_api_gateway:
     build: ./api-gateway
@@ -146,9 +158,19 @@ services:
       - ./auth:/usr/src/app
       - /usr/src/app/node_modules
     env_file: ./auth/.env  # Load .env từ thư mục auth
+    # depends_on:
+    #   - thaian_mongodb
+    #   - thaian_rabbitmq 
+    # restart: unless-stopped
+    # networks:
+    #   - microservices-net
+    # --- ĐÃ SỬA ---
+    # Bắt buộc chờ đến khi mongodb và rabbitmq "khỏe mạnh"
     depends_on:
-      - thaian_mongodb
-      - thaian_rabbitmq 
+      thaian_mongodb:
+        condition: service_healthy
+      thaian_rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - microservices-net
@@ -162,9 +184,18 @@ services:
       - ./order:/usr/src/app
       - /usr/src/app/node_modules
     env_file: ./order/.env  # Load .env từ thư mục order
+    # depends_on:
+    #   - thaian_mongodb
+    #   - thaian_rabbitmq
+    # restart: unless-stopped
+    # networks:
+    #   - microservices-net
+    # --- ĐÃ SỬA ---
     depends_on:
-      - thaian_mongodb
-      - thaian_rabbitmq
+      thaian_mongodb:
+        condition: service_healthy
+      thaian_rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - microservices-net
@@ -178,9 +209,18 @@ services:
       - ./product:/usr/src/app
       - /usr/src/app/node_modules
     env_file: ./product/.env  # Load .env từ thư mục product
+    # depends_on:
+    #   - thaian_mongodb
+    #   - thaian_rabbitmq
+    # restart: unless-stopped
+    # networks:
+    #   - microservices-net
+    # --- ĐÃ SỬA ---
     depends_on:
-      - thaian_mongodb
-      - thaian_rabbitmq
+      thaian_mongodb:
+        condition: service_healthy
+      thaian_rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - microservices-net
