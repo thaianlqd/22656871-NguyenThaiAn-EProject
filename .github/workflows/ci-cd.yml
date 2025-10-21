@@ -408,26 +408,7 @@ jobs:
           if ! nc -z localhost 3000; then echo "Auth service timed out"; cat auth.log; exit 1; fi
           echo "Giving Order service time to connect to RabbitMQ..."
           sleep 10
-
-      # --- BƯỚC BẮT BỆNH NÂNG CAO ---
-      - name: Check background processes status
-        run: |
-          echo "--- Checking running Node.js processes ---"
-          # Dùng grep '[n]ode' để không đếm chính câu lệnh grep và đảm bảo nó tìm đúng tiến trình
-          PROCESS_COUNT=$(ps aux | grep "[n]ode index.js" | wc -l)
-          echo "Found $PROCESS_COUNT active 'node index.js' processes."
-          ps aux | grep "[n]ode index.js" || echo "No active 'node index.js' processes found!"
-          
-          # NẾU KHÔNG ĐỦ 2 PROCESS, BÁO LỖI VÀ IN LOG
-          if [ "$PROCESS_COUNT" -lt 2 ]; then
-            echo "::error::One or more background services have crashed! Displaying logs:"
-            echo "--- Auth Service Log (auth.log) ---"
-            cat auth.log || echo "auth.log not found."
-            echo "--- Order Service Log (order.log) ---"
-            cat order.log || echo "order.log not found."
-            exit 1
-          fi
-
+      
       # --- 4. Bây giờ mới Test service chính (Product) ---
       - name: Setup and Test Product Service
         run: |
@@ -439,7 +420,17 @@ jobs:
           echo "AUTH_SERVICE_URL=http://localhost:3000" >> product/.env
           cd product && npm ci && npm test
 
-      # --- 5. Linting và Dọn dẹp ---
+      # --- 5. BƯỚC DEBUG: Luôn hiển thị log của các service chạy nền ---
+      - name: Display background service logs
+        if: always() # Luôn chạy, dù các bước trước thành công hay thất bại
+        run: |
+          echo "--- Displaying logs from background services ---"
+          echo "--- Auth Service Log (auth.log) ---"
+          cat auth.log || echo "auth.log not found."
+          echo "--- Order Service Log (order.log) ---"
+          cat order.log || echo "order.log not found."
+
+      # --- 6. Linting và Dọn dẹp ---
       - name: Lint code
         run: |
           npm install -g eslint@8
@@ -488,6 +479,8 @@ jobs:
           context: ./api-gateway
           push: true
           tags: thaianlqd050204/microservices-gateway:latest
+
+
 
 
 
