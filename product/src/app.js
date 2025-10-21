@@ -46,9 +46,17 @@ class App {
     );
   }
 
+  // async stop() {
+  //   await mongoose.disconnect();
+  //   this.server.close();
+  //   console.log("Server stopped");
+  // }
   async stop() {
+    // Thêm dòng kiểm tra này
+    if (this.server) {
+      this.server.close();
+    }
     await mongoose.disconnect();
-    this.server.close();
     console.log("Server stopped");
   }
 }
