@@ -413,7 +413,7 @@ jobs:
       - name: Check background processes status
         run: |
           echo "--- Checking running Node.js processes ---"
-          # Dùng grep '[n]ode' để không đếm chính câu lệnh grep
+          # Dùng grep '[n]ode' để không đếm chính câu lệnh grep và đảm bảo nó tìm đúng tiến trình
           PROCESS_COUNT=$(ps aux | grep "[n]ode index.js" | wc -l)
           echo "Found $PROCESS_COUNT active 'node index.js' processes."
           ps aux | grep "[n]ode index.js" || echo "No active 'node index.js' processes found!"
@@ -488,5 +488,7 @@ jobs:
           context: ./api-gateway
           push: true
           tags: thaianlqd050204/microservices-gateway:latest
+
+
 
 
