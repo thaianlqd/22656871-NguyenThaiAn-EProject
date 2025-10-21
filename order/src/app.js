@@ -91,15 +91,16 @@ const express = require("express");
 const mongoose = require("mongoose");
 const Order = require("./models/order");
 const amqp = require("amqplib");
-const config = require("./config"); // <-- SỬ DỤNG FILE CONFIG
+const config = require("./config");
 
 class App {
   constructor() {
     this.app = express();
-    // Không gọi các hàm async ở đây nữa, chuyển vào init()
+    // SỬA LỖI: Khai báo các thuộc tính để lưu giữ kết nối
+    this.connection = null;
+    this.channel = null;
   }
 
-  // SỬA LỖI: Thêm hàm init() để đảm bảo mọi thứ khởi động đúng thứ tự
   async init() {
     await this.connectDB();
     await this.setupOrderConsumer();
@@ -107,28 +108,26 @@ class App {
 
   async connectDB() {
     try {
-      // Bỏ các option cũ, Mongoose v7+ không cần nữa
       await mongoose.connect(config.mongoURI);
       console.log("Order Service: MongoDB connected");
     } catch (error) {
       console.error("Order Service: MongoDB connection error:", error);
-      process.exit(1); // Thoát nếu không kết nối được DB
+      process.exit(1);
     }
   }
 
   async setupOrderConsumer() {
     console.log("Order Service: Connecting to RabbitMQ...");
     try {
-      // SỬA LỖI: Sử dụng URI từ file config, và bỏ setTimeout
-      const connection = await amqp.connect(config.rabbitMQURI);
-      const channel = await connection.createChannel();
+      // SỬA LỖI: Lưu kết nối và kênh vào thuộc tính của class
+      this.connection = await amqp.connect(config.rabbitMQURI);
+      this.channel = await this.connection.createChannel();
 
-      // Đảm bảo cả 2 queue đều tồn tại
-      await channel.assertQueue(config.orderQueue);
-      await channel.assertQueue(config.productQueue);
+      await this.channel.assertQueue(config.orderQueue, { durable: true });
+      await this.channel.assertQueue(config.productQueue, { durable: true });
       console.log("Order Service: Connected to RabbitMQ and queues asserted.");
   
-      channel.consume(config.orderQueue, async (data) => {
+      this.channel.consume(config.orderQueue, async (data) => {
         if (data !== null) {
           console.log("Order Service: Consuming message from 'orders' queue");
           try {
@@ -143,30 +142,27 @@ class App {
             await newOrder.save();
             console.log("Order Service: Order saved to DB.");
     
-            channel.ack(data);
+            this.channel.ack(data);
     
-            // Gửi message xác nhận về cho service product
             const { user, products: savedProducts, totalPrice } = newOrder.toJSON();
-            channel.sendToQueue(
-              config.productQueue, // SỬA LỖI: Dùng tên queue từ config
+            this.channel.sendToQueue(
+              config.productQueue,
               Buffer.from(JSON.stringify({ orderId, user, products: savedProducts, totalPrice }))
             );
             console.log("Order Service: Confirmation sent to 'products' queue.");
 
           } catch (error) {
             console.error("Order Service: Error processing message:", error);
-            // Báo cho RabbitMQ biết message bị lỗi
-            channel.nack(data, false, false); 
+            this.channel.nack(data, false, false); 
           }
         }
       });
     } catch (err) {
       console.error("Order Service: Failed to connect to RabbitMQ:", err.message);
-      process.exit(1); // Thoát nếu không kết nối được RabbitMQ
+      process.exit(1);
     }
   }
 
-  // start() không cần thiết vì service này không có API, nhưng cứ để đây
   start() {
     const port = config.port || 3002;
     this.server = this.app.listen(port, () =>
@@ -176,5 +172,4 @@ class App {
 }
 
 module.exports = App;
-
 
