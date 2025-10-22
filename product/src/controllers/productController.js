@@ -238,7 +238,7 @@ class ProductController {
         order = this.ordersMap.get(orderId);
       }
 
-      // // Delete the order from the map after processing to save memory
+      // // Delete the order from the map after processing to save memory => phần này không cần xóa nên bỏ qua
       // this.ordersMap.delete(orderId);
       
 
@@ -254,6 +254,7 @@ class ProductController {
     }
   }
 
+  //=> phần 8: trong khảo sát => thêm vào nè
   async getOrderStatus(req, res, _next) {
     const { orderId } = req.params;
     const order = this.ordersMap.get(orderId);

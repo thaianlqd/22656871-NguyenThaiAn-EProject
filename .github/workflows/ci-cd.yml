@@ -1,3 +1,4 @@
+##=> thai an - test lan 1: 
 # name: CI/CD Pipeline for Microservices
 
 # on:
@@ -131,9 +132,7 @@
 #           tags: thaian/microservices-gateway:latest
 
 
-
-
-# mong la dc
+##=> thai an - test lan 2: 
 
 # name: CI/CD Pipeline for Microservices
 
@@ -335,9 +334,6 @@
 #           context: ./api-gateway
 #           push: true
 #           tags: thaianlqd050204/microservices-gateway:latest
-
-
-
 
 
 ##=> thai an - update:
