@@ -294,6 +294,8 @@ const chaiHttp = require("chai-http");
 const App = require("../app");
 const expect = chai.expect;
 require("dotenv").config();
+const Product = require("../models/product");
+
 
 chai.use(chaiHttp);
 
