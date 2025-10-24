@@ -449,30 +449,28 @@ describe("Products", () => {
   });
 
   // --- SỬA LỖI: Di chuyển khối describe này ra ngoài ---
-  describe("GET /products/:id", () => {
+  describe("Products", () => {
+    let createdProductId; // ✅ Lưu lại ID thật
+
+    it("should create a new product", async () => {
+      const res = await chai.request(App)
+        .post("/products")
+        .send({ name: "Test Product", price: 200, description: "Good product" });
+
+      expect(res).to.have.status(201);
+      expect(res.body).to.have.property("_id");
+      createdProductId = res.body._id; // ✅ Lưu lại id sản phẩm thật
+    });
+
     it("should return the product details by id", async () => {
-      expect(createdProducts.length).to.be.greaterThan(0);
-      const productToFetch = createdProducts[0];
-
-      // Kiểm tra DB hiện có
-      const all = await Product.find({});
-      console.log("Products in DB before fetch:", all.length);
-
-      // Đợi 1 chút để đảm bảo dữ liệu đã lưu
-      await new Promise(r => setTimeout(r, 300));
-
-      const res = await chai
-        .request(app.app)
-        .get(`/products/${productToFetch._id}`)
-        .set("Authorization", `Bearer ${authToken}`);
+      console.log("Products in DB before fetch:", createdProductId);
+      const res = await chai.request(App).get(`/products/${createdProductId}`);
 
       console.log(`GET /products/:id response status: ${res.status}`);
       expect(res).to.have.status(200);
-      expect(res.body).to.have.property("_id", productToFetch._id);
+      expect(res.body).to.have.property("_id", createdProductId);
     });
   });
-
-
 
 
 });
