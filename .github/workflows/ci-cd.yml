@@ -448,8 +448,7 @@
 #           docker build -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway
 
 
-
-#=> thai an - update: Tối ưu tốc độ
+#=> thai an - update: Tối ưu tốc độ (quay lại curl wait)
 name: CI/CD Pipeline for Microservices
 
 on:
@@ -497,8 +496,6 @@ jobs:
           cache-dependency-path: |
             **/package-lock.json
             
-      # TỐI ƯU: Không cần 'wait-on tcp:' nữa vì 'services' đã lo việc chờ đợi
-
       # TỐI ƯU: Cài đặt dependencies song song bằng npm ci (nhanh hơn install)
       - name: Install All Dependencies in Parallel
         run: |
@@ -540,9 +537,24 @@ jobs:
           echo "ORDER_PID=$ORDER_PID" >> $GITHUB_ENV
 
           echo "Waiting for Auth service to respond..."
-          # Dùng wait-on thay vì curl loop, timeout 30s
-          npm install -g wait-on 
-          wait-on http://localhost:3000 -t 30000 || (echo "Auth service timed out!" && cat auth/nohup.out && exit 1)
+          # SỬA LỖI: Quay lại dùng curl loop để chờ Auth service
+          for i in {1..30}; do
+            # Lệnh này sẽ thành công miễn là server trả về bất kỳ phản hồi HTTP nào (kể cả 400).
+            if curl -sS --max-time 1 http://localhost:3000/login -X POST > /dev/null 2>&1; then
+              echo "Auth service is responding!"
+              break # Thoát vòng lặp nếu thành công
+            fi
+            echo "Attempt $i/30: Auth service not yet responsive. Retrying in 2 seconds..."
+            sleep 2
+          done
+
+          # Kiểm tra lại lần cuối sau vòng lặp
+          if ! curl -sS --max-time 1 http://localhost:3000/login -X POST > /dev/null 2>&1; then
+            echo "::error::Auth service failed to start in time."
+            echo "--- Last 20 lines of Auth service log ---"
+            tail -n 20 auth/nohup.out || echo "auth/nohup.out not found."
+            exit 1
+          fi
 
           echo "Giving Order service time to connect..."
           sleep 5 # Giảm thời gian chờ Order service
@@ -608,5 +620,4 @@ jobs:
           (docker buildx build --platform linux/amd64 -t thaianlqd050204/microservices-order:latest --push ./order) & \
           (docker buildx build --platform linux/amd64 -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway) & \
           wait # Chờ tất cả build và push xong
-
 
