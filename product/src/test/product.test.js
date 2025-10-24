@@ -294,6 +294,7 @@ const chaiHttp = require("chai-http");
 const App = require("../app");
 const expect = chai.expect;
 require("dotenv").config();
+const mongoose = require('mongoose'); 
 
 chai.use(chaiHttp);
 
@@ -452,10 +453,16 @@ describe("Products", () => {
       expect(createdProducts.length).to.be.greaterThan(0);
       const productToFetch = createdProducts[0]; 
 
+      // Log ID để kiểm tra
+      console.log(`Fetching product with ID: ${productToFetch._id}`);
+
       const res = await chai
-        .request(app.app) // SỬA LỖI: Sử dụng 'app.app' thay vì 'appInstance.app'
+        .request(appInstance.app) 
         .get(`/products/${productToFetch._id}`) 
         .set("Authorization", `Bearer ${authToken}`);
+
+      // Log status trả về để debug
+      console.log(`GET /products/:id response status: ${res.status}`);
 
       expect(res).to.have.status(200);
       expect(res.body).to.have.property("_id", productToFetch._id); 
@@ -465,7 +472,7 @@ describe("Products", () => {
       // SỬA LỖI: mongoose đã được require ở trên
       const nonExistentId = new mongoose.Types.ObjectId().toString(); 
       const res = await chai
-        .request(app.app) // SỬA LỖI: Sử dụng 'app.app' thay vì 'appInstance.app'
+        .request(appInstance.app) 
         .get(`/products/${nonExistentId}`) 
         .set("Authorization", `Bearer ${authToken}`);
 
@@ -475,7 +482,7 @@ describe("Products", () => {
     it("should return 400 if product id format is invalid", async () => {
         const invalidId = '123'; 
         const res = await chai
-          .request(app.app) // SỬA LỖI: Sử dụng 'app.app' thay vì 'appInstance.app'
+          .request(appInstance.app) 
           .get(`/products/${invalidId}`) 
           .set("Authorization", `Bearer ${authToken}`);
   
