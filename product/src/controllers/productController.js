@@ -254,7 +254,6 @@ class ProductController {
     }
   }
 
-  //=> phần 8: trong khảo sát => thêm vào nè
   async getOrderStatus(req, res, _next) {
     const { orderId } = req.params;
     const order = this.ordersMap.get(orderId);
@@ -273,6 +272,17 @@ class ProductController {
       console.error("Error getting products:", error);
       res.status(500).json({ message: "Server error" });
     }
+  }
+
+  //phần 8: phần thêm vào đây nè
+  async getProductById(req, res) {
+    const product = await Product.findById(req.params.id);
+
+    if(!product){
+      return res.status(404).json({message: "product not found"});
+    }
+
+    res.status(200).json(product);
   }
 }
 

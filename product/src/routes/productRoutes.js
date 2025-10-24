@@ -28,6 +28,7 @@ const productController = new ProductController();
 // Tất cả các route đều dùng chung instance này
 router.post("/", isAuthenticated, productController.createProduct);
 router.get("/", isAuthenticated, productController.getProducts);
+router.get("/", isAuthenticated, productController.getProductById);
 
 // Các route liên quan đến việc mua hàng
 router.post("/buy", isAuthenticated, productController.createOrder);
