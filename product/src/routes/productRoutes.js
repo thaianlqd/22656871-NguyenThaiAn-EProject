@@ -16,7 +16,7 @@
 // module.exports = router;
 
 
-=> thai an - update:
+// => thai an - update:
 const express = require("express");
 const ProductController = require("../controllers/productController");
 const isAuthenticated = require("../utils/isAuthenticated");
