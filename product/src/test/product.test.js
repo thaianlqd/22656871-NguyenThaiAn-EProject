@@ -443,38 +443,46 @@ describe("Products", () => {
     });
 
 
-    // --- PHẦN TEST XEM SẢN PHẨM BẰNG ID ---
+    
+  });
+
+  // --- SỬA LỖI: Di chuyển khối describe này ra ngoài ---
   describe("GET /products/:id", () => {
     it("should return the product details by id", async () => {
-      // Đảm bảo có sản phẩm đã tạo
-      expect(createdProducts.length).to.be.greaterThan(0);
+      expect(createdProducts.length, "Cannot run getById test without a product created first").to.be.greaterThan(0);
       const productToFetch = createdProducts[0]; 
 
-      // Gọi API với ID thật
       const res = await chai
-        .request(appInstance.app) 
+        .request(appInstance.app) // Bây giờ đã truy cập được appInstance
         .get(`/products/${productToFetch._id}`) 
         .set("Authorization", `Bearer ${authToken}`);
 
-      // Kiểm tra trường hợp thành công (tìm thấy)
-      expect(res).to.have.status(200); // <-- Kiểm tra status 200 OK
-      expect(res.body).to.have.property("_id", productToFetch._id); // <-- Kiểm tra trả về đúng sản phẩm
+      expect(res).to.have.status(200);
+      expect(res.body).to.have.property("_id", productToFetch._id); 
+      expect(res.body).to.have.property("name", productToFetch.name); 
     });
 
     it("should return 404 if product id does not exist", async () => {
-      const nonExistentId = '60d21b4667d0d8992e610c85'; // ID giả
+      const nonExistentId = new mongoose.Types.ObjectId().toString(); // Tạo ID ObjectId hợp lệ nhưng không có thật
       const res = await chai
-        .request(appInstance.app) 
+        .request(appInstance.app) // Bây giờ đã truy cập được appInstance
         .get(`/products/${nonExistentId}`) 
         .set("Authorization", `Bearer ${authToken}`);
 
-      // Kiểm tra trường hợp thất bại (không tìm thấy)
-      expect(res).to.have.status(404); // <-- Kiểm tra status 404 Not Found
+      expect(res).to.have.status(404);
     });
 
-    // ... (test cho ID không hợp lệ)
+    it("should return 400 if product id format is invalid", async () => {
+        const invalidId = '123'; 
+        const res = await chai
+          .request(appInstance.app) 
+          .get(`/products/${invalidId}`) 
+          .set("Authorization", `Bearer ${authToken}`);
+  
+        expect(res).to.have.status(400); // Mong đợi lỗi 400 vì ID sai định dạng
+      });
   });
-  });
+
 
 });
 
