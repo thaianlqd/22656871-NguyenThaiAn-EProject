@@ -375,9 +375,10 @@ jobs:
 
       - name: Install All Dependencies
         run: |
-          cd auth && npm install && cd ..
-          cd product && npm install && cd ..
-          cd order && npm install && cd ..
+          cd auth && npm install &
+          cd product && npm install &
+          cd order && npm install &
+          wait
           
       - name: Create .env files
         run: |
