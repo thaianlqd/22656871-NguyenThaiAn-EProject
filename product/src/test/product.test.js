@@ -442,9 +442,29 @@ describe("Products", () => {
       expect(orderedProduct).to.have.property("_id", createdProducts[0]._id);
       expect(orderedProduct.name).to.equal(createdProducts[0].name);
     });
+  });
 
+  // --- THÊM PHẦN NÀY VÀO TRƯỚC DẤU NGOẶC ĐÓNG CUỐI CÙNG ---
+  describe("GET /products/:id", () => {
+    it("should return the product details by id", async () => {
+      // Đảm bảo rằng đã có sản phẩm được tạo ở các test trước
+      // Nếu không có sản phẩm nào, bỏ qua test này
+      if (createdProducts.length === 0) {
+        console.log("Skipping GET /products/:id test - no product created.");
+        return; // Bỏ qua nếu không có sản phẩm
+      }
+      
+      const productToFetch = createdProducts[0]; // Lấy sản phẩm đầu tiên đã tạo
 
-    
+      const res = await chai
+        .request(app.app) // Sử dụng 'app.app'
+        .get(`/products/${productToFetch._id}`) // Gọi API với ID sản phẩm
+        .set("Authorization", `Bearer ${authToken}`);
+
+      // Kiểm tra trường hợp thành công (tìm thấy)
+      expect(res).to.have.status(200); // Mong đợi status 200 OK
+      expect(res.body).to.have.property("_id", productToFetch._id); // Mong đợi trả về đúng sản phẩm
+    });
   });
 
 
