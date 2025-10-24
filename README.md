@@ -147,36 +147,3 @@ POST /products/buy - Đặt hàng. (Header: Authorization: Bearer <token>). Body
 GET /products/buy/:orderId - Lấy trạng thái đơn hàng. (Header: Authorization: Bearer <token>)
 
 Lưu ý: Tiền tố /auth, /products có thể thay đổi tùy cấu hình API Gateway.
-
-Cấu trúc thư mục
-
-.
-├── .github/
-│   └── workflows/
-│       └── main.yml         # GitHub Actions Workflow
-├── api-gateway/             # API Gateway Service
-│   ├── Dockerfile
-│   ├── index.js
-│   └── package.json
-├── auth/                    # Auth Service
-│   ├── src/                 # Mã nguồn (controllers, services, models...)
-│   ├── test/                # Files test
-│   ├── Dockerfile
-│   ├── package.json
-│   └── .env                 # File biến môi trường (tạo thủ công)
-├── order/                   # Order Service
-│   ├── src/
-│   ├── test/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── .env
-├── product/                 # Product Service
-│   ├── src/
-│   ├── test/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── .env
-├── .eslintrc.js             # Cấu hình ESLint chung
-├── .gitignore
-├── docker-compose.yml       # Cấu hình Docker Compose cho môi trường local
-└── README.md                # File bạn đang đọc
