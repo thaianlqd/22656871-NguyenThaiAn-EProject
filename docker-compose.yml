@@ -113,9 +113,10 @@ services:
     # Healthcheck để đảm bảo RabbitMQ sẵn sàng trước khi các service khác khởi động
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s  # Thêm: Bỏ qua kiểm tra đầu tiên trong 5s để container ổn định
 
   thaian_mongodb:
     image: mongo:7.0
@@ -129,9 +130,10 @@ services:
       - microservices-net
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s  # Thêm: Bỏ qua kiểm tra đầu tiên trong 5s để container ổn định
 
   thaian_api_gateway:
     build: ./api-gateway
