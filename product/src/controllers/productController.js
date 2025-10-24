@@ -277,35 +277,36 @@ class ProductController {
   }
 
   //phần 8: phần thêm vào đây nè
-  // async getProductById(req, res) {
-  //   const product = await Product.findById(req.params.id);
-
-  //   if(!product){
-  //     return res.status(404).json({message: "product not found"});
-  //   }
-
-  //   res.status(200).json(product);
-  // }
   async getProductById(req, res) {
-    try {
-      const { id } = req.params;
+    const product = await Product.findById(req.params.id);
 
-      // ✅ Nếu ID không hợp lệ → trả luôn 400, không để Mongoose treo
-      if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({ message: "Invalid product ID format" });
-      }
-
-      const product = await Product.findById(id);
-      if (!product) {
-        return res.status(404).json({ message: "product not found" });
-      }
-
-      res.status(200).json(product);
-    } catch (err) {
-      console.error("Error in getProductById:", err);
-      res.status(500).json({ message: "Server error" });
+    if(!product){
+      return res.status(404).json({message: "product not found"});
     }
+
+    res.status(200).json(product);
   }
+  
+  // async getProductById(req, res) {
+  //   try {
+  //     const { id } = req.params;
+
+  //     // ✅ Nếu ID không hợp lệ → trả luôn 400, không để Mongoose treo
+  //     if (!mongoose.Types.ObjectId.isValid(id)) {
+  //       return res.status(400).json({ message: "Invalid product ID format" });
+  //     }
+
+  //     const product = await Product.findById(id);
+  //     if (!product) {
+  //       return res.status(404).json({ message: "product not found" });
+  //     }
+
+  //     res.status(200).json(product);
+  //   } catch (err) {
+  //     console.error("Error in getProductById:", err);
+  //     res.status(500).json({ message: "Server error" });
+  //   }
+  // }
 }
 
 module.exports = ProductController;
