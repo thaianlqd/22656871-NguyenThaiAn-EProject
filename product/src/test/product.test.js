@@ -294,6 +294,8 @@ const chaiHttp = require("chai-http");
 const App = require("../app");
 const expect = chai.expect;
 require("dotenv").config();
+const mongoose = require('mongoose'); // SỬA LỖI 1: Đã thêm require mongoose
+const Product = require('../models/product'); // SỬA LỖI 2: Đã thêm require Product model
 
 
 chai.use(chaiHttp);
@@ -445,25 +447,24 @@ describe("Products", () => {
   });
 
   // --- THÊM PHẦN NÀY VÀO TRƯỚC DẤU NGOẶC ĐÓNG CUỐI CÙNG ---
-  describe("GET /products/:id", () => {
-    it("should return the product details by id", async function() { // Thêm function để dùng this
-        this.timeout(5000); // Thêm timeout nhỏ đề phòng DB chậm
+   describe("GET /products/:id", () => {
+    it("should return the product details by id", async function() { 
+        this.timeout(5000); 
         expect(createdProducts.length).to.be.greaterThan(0);
         const productToFetch = createdProducts[0]; 
         const targetId = productToFetch._id;
 
-        // --- DEBUG LOGGING ---
         console.log(`[Test GET /:id] Attempting to fetch product with ID: ${targetId}`);
         console.log(`[Test GET /:id] Type of ID: ${typeof targetId}`);
 
-        // Thử query trực tiếp từ DB trong test xem có tìm thấy không
+        // Thử query trực tiếp từ DB trong test
         try {
-            const productInDb = await Product.findById(targetId);
+            // SỬA LỖI 2: Bây giờ Product đã được require
+            const productInDb = await Product.findById(targetId); 
             console.log(`[Test GET /:id] Direct DB query result: ${productInDb ? 'FOUND' : 'NOT FOUND (null)'}`);
         } catch(dbError){
             console.error("[Test GET /:id] Error querying DB directly:", dbError);
         }
-        // --- END DEBUG ---
 
         const res = await chai
           .request(app.app) 
@@ -478,6 +479,7 @@ describe("Products", () => {
     });
 
     it("should return 404 if product id does not exist", async () => {
+      // SỬA LỖI 1: Bây giờ mongoose đã được require
       const nonExistentId = new mongoose.Types.ObjectId().toString(); 
       const res = await chai
         .request(app.app) 
