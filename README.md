@@ -1,134 +1,183 @@
-README.md - Dự Án Microservices E-Commerce
-Giới Thiệu
-Dự án này là một hệ thống microservices đơn giản bằng Node.js, mô phỏng ứng dụng e-commerce với các chức năng chính: xác thực người dùng (auth), quản lý sản phẩm (product), và xử lý đơn hàng (order). Hệ thống sử dụng:
+Dự án Microservices E-commerce Cơ bản
 
-API Gateway: Proxy request đến các service con.
-Auth Service: Đăng ký, đăng nhập, JWT authentication (MongoDB lưu user).
-Product Service: Tạo/sản phẩm, mua hàng (RabbitMQ gửi message đến order).
-Order Service: Consume message từ RabbitMQ, lưu đơn hàng (MongoDB).
-RabbitMQ: Message broker cho giao tiếp async giữa services.
-MongoDB: Cơ sở dữ liệu cho auth, product, order (3 instances riêng).
+Đây là một dự án ví dụ minh họa kiến trúc microservices được xây dựng bằng Node.js, Express, MongoDB, và RabbitMQ, đi kèm với quy trình CI/CD hoàn chỉnh sử dụng GitHub Actions.
 
-Hệ thống được orchestrate bằng Docker Compose, hỗ trợ dev local dễ dàng.
-Yêu Cầu Hệ Thống
+Giới thiệu
 
-Node.js v18+.
-Docker và Docker Compose (v2+).
-MongoDB (tích hợp qua Docker, không cần cài local).
-RabbitMQ (tích hợp qua Docker).
+Dự án mô phỏng một hệ thống thương mại điện tử đơn giản bao gồm các dịch vụ cốt lõi:
 
-Cài Đặt
+Auth Service: Quản lý việc đăng ký, đăng nhập và xác thực người dùng bằng JSON Web Tokens (JWT).
 
-Clone project (giả sử đã có):
-textgit clone <repo-url>
-cd 22656871-NguyenThaiAn-EProject
+Product Service: Quản lý thông tin sản phẩm (tạo, xem danh sách, xem chi tiết) và khởi tạo quy trình đặt hàng.
 
-Cài dependencies cho từng service (nếu chưa):
+Order Service: Lắng nghe các yêu cầu đặt hàng, xử lý, lưu trữ thông tin đơn hàng vào cơ sở dữ liệu và gửi thông báo xác nhận.
 
-Di chuyển đến từng folder (auth, product, order, api-gateway):
-textcd auth && npm install && cd ..
-cd product && npm install && cd ..
-cd order && npm install && cd ..
-cd api-gateway && npm install && cd ..
+API Gateway: Đóng vai trò là cổng vào duy nhất cho tất cả các request từ client, điều hướng đến các service tương ứng.
+
+Giao tiếp giữa Product Service và Order Service được thực hiện bất đồng bộ thông qua RabbitMQ, giúp tăng tính linh hoạt và khả năng phục hồi của hệ thống.
+
+Công nghệ sử dụng
+
+Backend: Node.js, Express.js
+
+Database: MongoDB (với Mongoose ODM)
+
+Message Broker: RabbitMQ (với amqplib)
+
+Xác thực: JSON Web Token (JWT), bcryptjs
+
+Containerization: Docker, Docker Compose
+
+CI/CD: GitHub Actions
+
+Testing: Mocha, Chai
+
+Linting: ESLint
+
+Bắt đầu
+
+Yêu cầu
+
+Docker: https://docs.docker.com/get-docker/
+
+Docker Compose: Thường được cài đặt cùng với Docker Desktop.
+
+Cài đặt và Chạy (Sử dụng Docker Compose)
+
+Clone repository:
+
+git clone <your-repository-url>
+cd <your-repository-name>
 
 
+Thiết lập Biến Môi trường:
+Mỗi service (auth, product, order) đều yêu cầu một file .env riêng trong thư mục gốc của nó. Bạn cần tạo các file này dựa trên các file .env.example (nếu có) hoặc theo cấu trúc sau:
 
-Chạy hệ thống:
-textdocker-compose up -d --build
+auth/.env:
 
-Chờ 2-3 phút (RabbitMQ start chậm).
-Kiểm tra: docker ps (5 containers Up: rabbitmq, api-gateway, auth, order, product).
-
-
-Dừng hệ thống:
-textdocker-compose down -v  # -v xóa data nếu cần reset
+MONGODB_AUTH_URI=mongodb://thaian_mongodb:27017/ThaianAuthService
+JWT_SECRET=thaiansecret # Thay bằng một chuỗi bí mật mạnh hơn
+RABBITMQ_URI=amqp://guest:guest@thaian_rabbitmq:5672 # (Nếu service auth cần)
 
 
-Cấu Trúc Folder
-text22656871-NguyenThaiAn-EProject/
-├── api-gateway/
-│   ├── index.js  # Proxy routes
-│   ├── package.json
-│   └── Dockerfile
-├── auth/
+product/.env:
+
+MONGODB_PRODUCT_URI=mongodb://thaian_mongodb:27017/ThaianProductService
+JWT_SECRET=thaiansecret # Phải giống với auth service
+RABBITMQ_URI=amqp://guest:guest@thaian_rabbitmq:5672
+AUTH_SERVICE_URL=http://thaian_auth_service:3000 # Dùng cho test
+LOGIN_TEST_USER=your_test_user # Dùng cho test
+LOGIN_TEST_PASSWORD=your_test_password # Dùng cho test
+
+
+order/.env:
+
+MONGODB_ORDER_URI=mongodb://thaian_mongodb:27017/ThaianOrderService
+JWT_SECRET=thaiansecret # Phải giống với auth service
+RABBITMQ_URI=amqp://guest:guest@thaian_rabbitmq:5672
+
+
+api-gateway/.env: (Nếu có) Thường không cần biến môi trường đặc biệt, nhưng bạn có thể thêm nếu muốn cấu hình port.
+
+Khởi chạy hệ thống:
+
+docker-compose up -d --build
+
+
+Lệnh này sẽ build các Docker image (nếu chưa có) và khởi động tất cả các container trong chế độ nền. API Gateway sẽ chạy ở http://localhost:3003.
+
+Chạy Tests (Trên môi trường Docker)
+
+Sau khi chạy docker-compose up -d, bạn có thể chạy test cho từng service bằng lệnh docker-compose exec:
+
+# Chạy test cho Auth Service
+docker-compose exec thaian_auth_service npm test
+
+# Chạy test cho Product Service
+docker-compose exec thaian_product_service npm test
+
+# Chạy test cho Order Service
+docker-compose exec thaian_order_service npm test
+
+
+Quy trình CI/CD
+
+Dự án này sử dụng GitHub Actions để tự động hóa quy trình CI/CD, bao gồm các bước:
+
+Trigger: Chạy mỗi khi có push hoặc pull_request vào nhánh main.
+
+Job test:
+
+Khởi động các container MongoDB và RabbitMQ.
+
+Cài đặt dependencies (npm ci) và chạy tests (npm test) cho từng service (auth, order, product).
+
+Khởi động auth và order service trong nền.
+
+Chạy test integration cho product service (bao gồm cả giao tiếp RabbitMQ).
+
+Chạy ESLint để kiểm tra chất lượng code.
+
+Job build-docker: (Chỉ chạy nếu job test thành công)
+
+Đăng nhập vào Docker Hub.
+
+Build Docker image cho từng service (auth, product, order, api-gateway).
+
+Đẩy (push) các image đã build lên Docker Hub với tag latest.
+
+API Endpoints (Thông qua API Gateway - Port 3003)
+
+Auth Service:
+
+POST /auth/register: Đăng ký người dùng mới. Body: { "username": "...", "password": "..." }
+
+POST /auth/login: Đăng nhập. Body: { "username": "...", "password": "..." }
+
+GET /auth/dashboard: Endpoint ví dụ cần xác thực (yêu cầu header Authorization: Bearer <token>).
+
+Product Service:
+
+POST /products: Tạo sản phẩm mới (yêu cầu token). Body: { "name": "...", "price": ..., "description": "..." }
+
+GET /products: Lấy danh sách sản phẩm (yêu cầu token).
+
+GET /products/:id: Lấy chi tiết sản phẩm (yêu cầu token).
+
+POST /products/buy: Đặt hàng (yêu cầu token). Body: { "ids": ["productId1", "productId2"] }
+
+GET /products/buy/:orderId: Lấy trạng thái đơn hàng (yêu cầu token).
+
+Lưu ý: Các endpoint trên là ví dụ, bạn có thể cần điều chỉnh tiền tố (/auth, /products) tùy theo cấu hình API Gateway.
+
+Cấu trúc thư mục (Ví dụ)
+
+.
+├── auth/                 # Auth Service
 │   ├── src/
-│   │   ├── app.js  # Express app, routes /login, /register, /dashboard
-│   │   ├── config.js
-│   │   ├── controllers/authController.js
-│   │   ├── middlewares/authMiddleware.js
-│   │   ├── models/user.js
-│   │   └── services/authService.js
+│   ├── test/
+│   ├── Dockerfile
 │   ├── package.json
-│   └── Dockerfile
-├── order/
+│   └── .env
+├── product/              # Product Service
 │   ├── src/
-│   │   ├── app.js  # Consume RabbitMQ queue "orders"
-│   │   ├── config.js
-│   │   └── models/order.js
+│   ├── test/
+│   ├── Dockerfile
 │   ├── package.json
-│   └── Dockerfile
-├── product/
+│   └── .env
+├── order/                # Order Service
 │   ├── src/
-│   │   ├── app.js  # Publish message to RabbitMQ, long polling order
-│   │   ├── config.js
-│   │   └── utils/messageBroker.js
+│   ├── test/
+│   ├── Dockerfile
 │   ├── package.json
-│   └── Dockerfile
-├── docker-compose.yml  # Orchestrate services + RabbitMQ
-└── README.md
-Cách Test API (Sử Dụng Postman)
-Tất cả request qua gateway (localhost:3003). Sử dụng body raw JSON, header Content-Type: application/json.
-
-Register User:
-
-POST /auth/register
-Body: {"username": "testuser", "password": "password123"}
-Response: 201, { "_id": "...", "username": "testuser" }.
-
-
-Login:
-
-POST /auth/login
-Body giống trên.
-Response: 200, { "token": "eyJhbGciOiJIUzI1NiIs..." }. Copy token.
-
-
-Create Product (cần token):
-
-POST /products
-Headers: Authorization: Bearer <token>
-Body: {"name": "iPhone 15", "price": 20000000, "description": "Smartphone"}
-Response: 201, product object với _id.
-
-
-Get Products:
-
-GET /products
-Headers: Authorization: Bearer <token>
-Response: 200, array products.
-
-
-Buy Order (kích hoạt RabbitMQ):
-
-POST /products/buy
-Headers: Authorization: Bearer <token>
-Body: {"ids": ["_id_product_từ_bước_3"]}
-Response: 201, order details (chờ 5-10s long polling).
-
-
-RabbitMQ UI: Mở http://localhost:15672 (user: guest, pass: guest) để xem queue "orders" và "products".
-
-Troubleshooting
-
-Lỗi kết nối RabbitMQ (ENOTFOUND): Sửa code dùng process.env.RABBITMQ_URI thay hard-code.
-404 Not Found: Kiểm tra rewrite path trong gateway (strip/prepend prefix match route service).
-ECONNREFUSED MongoDB: Sửa URI port internal 27017 trong env yml.
-Treo lâu: Tăng timeout Postman (Settings → Request timeout = 0), hoặc check logs real-time docker-compose logs -f <service>.
-Cảnh báo deprecation: Cập nhật npm packages (npm update trong folder), rebuild service.
-
-Góp Phần
-
-Fork repo, tạo branch, pull request.
-Liên hệ: [email hoặc GitHub].
-
-Dự án được xây dựng dựa trên Node.js, Express, Mongoose, AMQPLib. Cảm ơn bạn đã sử dụng!!
+│   └── .env
+├── api-gateway/          # API Gateway
+│   ├── Dockerfile
+│   ├── index.js
+│   └── package.json
+├── .github/workflows/    # GitHub Actions workflow
+│   └── main.yml
+├── .eslintrc.js          # Cấu hình ESLint chung
+├── .gitignore
+├── docker-compose.yml    # Cấu hình Docker Compose
+└── README.md             # File bạn đang đọc

@@ -446,7 +446,7 @@ describe("Products", () => {
     });
   });
 
-  // --- THÊM PHẦN NÀY VÀO TRƯỚC DẤU NGOẶC ĐÓNG CUỐI CÙNG ---
+  // --- THÊM PHẦN TEST XEM SẢN PHẨM BẰNG ID ---
   describe("GET /products/:id", () => {
     it("should return the product details by id", async function () {
       this.timeout(5000);
