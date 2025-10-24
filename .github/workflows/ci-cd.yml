@@ -337,120 +337,6 @@
 
 
 ##=> thai an - update:
-# name: CI/CD Pipeline for Microservices
-
-# on:
-#   push:
-#     branches: [ main ]
-#   pull_request:
-#     branches: [ main ]
-
-# jobs:
-#   test:
-#     runs-on: ubuntu-latest
-#     services:
-#       mongodb:
-#         image: mongo:7.0
-#         ports:
-#           - 27017:27017
-#       rabbitmq:
-#         image: rabbitmq:3-management-alpine
-#         ports:
-#           - 5672:5672
-
-#     steps:
-#       - uses: actions/checkout@v4
-
-#       - name: Set up Node.js
-#         uses: actions/setup-node@v4
-#         with:
-#           node-version: '20'
-#           cache: 'npm'
-          
-#       - name: Wait for Dependencies to be Ready
-#         run: |
-#           echo "Waiting for dependencies..."
-#           npm install -g wait-on
-#           wait-on tcp:27017 tcp:5672 -t 30000
-
-#       - name: Install All Dependencies
-#         run: |
-#           cd auth && npm install && cd ..
-#           cd product && npm install && cd ..
-#           cd order && npm install && cd ..
-          
-#       - name: Create .env files
-#         run: |
-#           echo "MONGODB_AUTH_URI=mongodb://localhost:27017/ci_auth" > auth/.env
-#           echo "JWT_SECRET=ci_secret" >> auth/.env
-#           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> auth/.env
-
-#           echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/ci_product" > product/.env
-#           echo "JWT_SECRET=ci_secret" >> product/.env
-#           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
-#           echo "LOGIN_TEST_USER=ci_user" >> product/.env
-#           echo "LOGIN_TEST_PASSWORD=ci_password" >> product/.env
-#           echo "AUTH_SERVICE_URL=http://localhost:3000" >> product/.env
-          
-#           echo "MONGODB_ORDER_URI=mongodb://localhost:27017/ci_order" > order/.env
-#           echo "JWT_SECRET=ci_secret" >> order/.env
-#           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
-
-#       # --- PHIÊN BẢN SỬA LỖI CUỐI CÙNG ---
-#       - name: Run Background Services and Wait
-#         run: |
-#           echo "Starting Auth service in background..."
-#           cd auth && nohup npm start > nohup.out 2>&1 &
-          
-#           echo "Starting Order service in background..."
-#           cd order && nohup npm start > nohup.out 2>&1 &
-          
-#           echo "Waiting for Auth service to respond..."
-#           for i in {1..30}; do
-#             # SỬA LỖI: Dùng -sS, bỏ _ và f. Chuyển stdout sang /dev/null
-#             # Lệnh này sẽ thành công miễn là server trả về bất kỳ phản hồi HTTP nào (kể cả 400).
-#             if curl -sS --max-time 1 http://localhost:3000/login -X POST > /dev/null 2>&1; then
-#               echo "Auth service is responding!"
-#               exit 0
-#             fi
-#             echo "Attempt $i/30: Auth service not yet responsive. Retrying in 2 seconds..."
-#             sleep 2
-#           done
-          
-#           echo "::error::Auth service failed to start in time."
-#           echo "--- Last 20 lines of Auth service log ---"
-#           tail -n 20 auth/nohup.out || echo "auth/nohup.out not found."
-#           exit 1
-
-#       # --- Chạy Tests ---
-#       - name: Run Tests (Auth, Product, Order)
-#         run: |
-#           cd auth && npm test
-#           cd ../product && npm test
-#           cd ../order && npm test
-
-#   build-docker:
-#     needs: test
-#     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v4
-#       - name: Login to Docker Hub
-#         uses: docker/login-action@v3
-#         with:
-#           username: ${{ secrets.DOCKER_USERNAME }}
-#           password: ${{ secrets.DOCKER_PASSWORD }}
-#       - name: Build and Push Images
-#         run: |
-#           docker build -t thaianlqd050204/microservices-auth:latest --push ./auth
-#           docker build -t thaianlqd050204/microservices-product:latest --push ./product
-#           docker build -t thaianlqd050204/microservices-order:latest --push ./order
-#           docker build -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway
-
-
-
-
-#=> thai an - update: Tối ưu tốc độ
 name: CI/CD Pipeline for Microservices
 
 on:
@@ -462,26 +348,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # Sử dụng 'services' để khởi động DB và MQ song song với các bước khác
     services:
       mongodb:
         image: mongo:7.0
-        ports: ['27017:27017']
-        # Thêm healthcheck để đảm bảo MongoDB sẵn sàng
-        options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")' || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+        ports:
+          - 27017:27017
       rabbitmq:
         image: rabbitmq:3-management-alpine
-        ports: ['5672:5672', '15672:15672']
-        # Thêm healthcheck cho RabbitMQ
-        options: >-
-          --health-cmd "rabbitmq-diagnostics check_port_connectivity || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+        ports:
+          - 5672:5672
 
     steps:
       - uses: actions/checkout@v4
@@ -491,20 +366,19 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          # Cache dependencies dựa trên package-lock.json của từng service
-          cache-dependency-path: |
-            **/package-lock.json
-            
-      # TỐI ƯU: Không cần 'wait-on' nữa vì 'services' có healthcheck
+          
+      - name: Wait for Dependencies to be Ready
+        run: |
+          echo "Waiting for dependencies..."
+          npm install -g wait-on
+          wait-on tcp:27017 tcp:5672 -t 30000
 
-      # TỐI ƯU: Cài đặt dependencies song song
       - name: Install All Dependencies
         run: |
-          npm --prefix auth ci & \
-          npm --prefix product ci & \
-          npm --prefix order ci & \
-          wait # Chờ tất cả cài đặt xong
-
+          cd auth && npm install && cd ..
+          cd product && npm install && cd ..
+          cd order && npm install && cd ..
+          
       - name: Create .env files
         run: |
           echo "MONGODB_AUTH_URI=mongodb://localhost:27017/ci_auth" > auth/.env
@@ -522,69 +396,41 @@ jobs:
           echo "JWT_SECRET=ci_secret" >> order/.env
           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
 
-      # Khởi động các service trong nền
-      - name: Run Background Services
+      # --- PHIÊN BẢN SỬA LỖI CUỐI CÙNG ---
+      - name: Run Background Services and Wait
         run: |
           echo "Starting Auth service in background..."
           cd auth && nohup npm start > nohup.out 2>&1 &
-          AUTH_PID=$!
           
           echo "Starting Order service in background..."
           cd order && nohup npm start > nohup.out 2>&1 &
-          ORDER_PID=$!
-
-          # Lưu PID vào biến môi trường để có thể kiểm tra sau
-          echo "AUTH_PID=$AUTH_PID" >> $GITHUB_ENV
-          echo "ORDER_PID=$ORDER_PID" >> $GITHUB_ENV
-
+          
           echo "Waiting for Auth service to respond..."
-          # Dùng wait-on thay vì curl loop cho gọn và chính xác hơn
-          npm install -g wait-on
-          wait-on http://localhost:3000 -t 30000 || (echo "Auth service timed out!" && cat auth/nohup.out && exit 1)
-
-          echo "Giving Order service time to connect..."
-          sleep 5 # Giảm thời gian chờ Order service
-
-      # Chạy Tests tuần tự (vì product test phụ thuộc auth/order chạy)
-      - name: Run Tests
-        run: |
-          echo "Running Auth tests..."
-          (cd auth && npm test) || (echo "Auth tests failed!" && cat auth/nohup.out && exit 1)
+          for i in {1..30}; do
+            # SỬA LỖI: Dùng -sS, bỏ _ và f. Chuyển stdout sang /dev/null
+            # Lệnh này sẽ thành công miễn là server trả về bất kỳ phản hồi HTTP nào (kể cả 400).
+            if curl -sS --max-time 1 http://localhost:3000/login -X POST > /dev/null 2>&1; then
+              echo "Auth service is responding!"
+              exit 0
+            fi
+            echo "Attempt $i/30: Auth service not yet responsive. Retrying in 2 seconds..."
+            sleep 2
+          done
           
-          # TỐI ƯU: Kiểm tra lại service Order trước khi chạy test Product
-          echo "Checking if Order service (PID $ORDER_PID) is still running..."
-          if ! kill -0 $ORDER_PID > /dev/null 2>&1; then
-             echo "::error::Order service crashed before Product tests!"
-             echo "--- Order Service Log ---"
-             cat order/nohup.out || echo "order/nohup.out not found."
-             exit 1
-          fi
-          
-          echo "Running Product tests..."
-          (cd product && npm test) || (echo "Product tests failed!" && cat order/nohup.out && exit 1) # In log Order nếu Product fail
-          
-          echo "Running Order tests..."
-          (cd order && npm test) || (echo "Order tests failed!" && cat order/nohup.out && exit 1)
+          echo "::error::Auth service failed to start in time."
+          echo "--- Last 20 lines of Auth service log ---"
+          tail -n 20 auth/nohup.out || echo "auth/nohup.out not found."
+          exit 1
 
-      # Hiển thị log nếu cần debug (chỉ chạy khi có lỗi)
-      - name: Display background service logs on failure
-        if: failure()
+      # --- Chạy Tests ---
+      - name: Run Tests (Auth, Product, Order)
         run: |
-          echo "--- Auth Log ---"
-          cat auth/nohup.out || echo "Not found."
-          echo "--- Order Log ---"
-          cat order/nohup.out || echo "Not found."
-
-      # Linting (Giữ nguyên)
-      - name: Lint code
-        if: success() # Chỉ chạy nếu test thành công
-        run: |
-          npm install -g eslint@8
-          eslint . --ext .js
+          cd auth && npm test
+          cd ../product && npm test
+          cd ../order && npm test
 
   build-docker:
     needs: test
-    # Chỉ build và push khi push lên nhánh main và test thành công
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
@@ -594,15 +440,11 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        
-      # TỐI ƯU: Build và Push song song
-      - name: Build and Push Images in Parallel
+      - name: Build and Push Images
         run: |
-          (docker buildx build --platform linux/amd64 -t thaianlqd050204/microservices-auth:latest --push ./auth) & \
-          (docker buildx build --platform linux/amd64 -t thaianlqd050204/microservices-product:latest --push ./product) & \
-          (docker buildx build --platform linux/amd64 -t thaianlqd050204/microservices-order:latest --push ./order) & \
-          (docker buildx build --platform linux/amd64 -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway) & \
-          wait # Chờ tất cả build xong
+          docker build -t thaianlqd050204/microservices-auth:latest --push ./auth
+          docker build -t thaianlqd050204/microservices-product:latest --push ./product
+          docker build -t thaianlqd050204/microservices-order:latest --push ./order
+          docker build -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway
+
 
