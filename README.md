@@ -1,6 +1,6 @@
 Dự án Microservices E-commerce Cơ bản
 
-Đây là một dự án ví dụ minh họa kiến trúc microservices được xây dựng bằng Node.js, Express, MongoDB, và RabbitMQ, đi kèm với quy trình CI/CD hoàn chỉnh sử dụng GitHub Actions.
+Đây là một dự án ví dụ minh họa kiến trúc microservices được xây dựng bằng Node.js, Express, MongoDB, và RabbitMQ. Dự án đi kèm với quy trình CI/CD hoàn chỉnh sử dụng GitHub Actions.
 
 Giới thiệu
 
@@ -51,44 +51,44 @@ cd <your-repository-name>
 
 
 Thiết lập Biến Môi trường:
-Mỗi service (auth, product, order) đều yêu cầu một file .env riêng trong thư mục gốc của nó. Bạn cần tạo các file này dựa trên các file .env.example (nếu có) hoặc theo cấu trúc sau:
+Mỗi service (auth, product, order) đều yêu cầu một file .env riêng trong thư mục gốc của nó. Bạn cần tạo các file này theo cấu trúc sau:
 
 auth/.env:
 
 MONGODB_AUTH_URI=mongodb://thaian_mongodb:27017/ThaianAuthService
-JWT_SECRET=thaiansecret # Thay bằng một chuỗi bí mật mạnh hơn
+JWT_SECRET=your_strong_jwt_secret # Thay bằng một chuỗi bí mật mạnh
 RABBITMQ_URI=amqp://guest:guest@thaian_rabbitmq:5672 # (Nếu service auth cần)
 
 
 product/.env:
 
 MONGODB_PRODUCT_URI=mongodb://thaian_mongodb:27017/ThaianProductService
-JWT_SECRET=thaiansecret # Phải giống với auth service
+JWT_SECRET=your_strong_jwt_secret # Phải giống với auth service
 RABBITMQ_URI=amqp://guest:guest@thaian_rabbitmq:5672
-AUTH_SERVICE_URL=http://thaian_auth_service:3000 # Dùng cho test
-LOGIN_TEST_USER=your_test_user # Dùng cho test
-LOGIN_TEST_PASSWORD=your_test_password # Dùng cho test
+AUTH_SERVICE_URL=http://thaian_auth_service:3000 # Dùng cho test khi chạy docker-compose exec
+LOGIN_TEST_USER=testuser # Dùng cho test
+LOGIN_TEST_PASSWORD=password # Dùng cho test
 
 
 order/.env:
 
 MONGODB_ORDER_URI=mongodb://thaian_mongodb:27017/ThaianOrderService
-JWT_SECRET=thaiansecret # Phải giống với auth service
+JWT_SECRET=your_strong_jwt_secret # Phải giống với auth service
 RABBITMQ_URI=amqp://guest:guest@thaian_rabbitmq:5672
 
 
-api-gateway/.env: (Nếu có) Thường không cần biến môi trường đặc biệt, nhưng bạn có thể thêm nếu muốn cấu hình port.
+api-gateway/.env: (Nếu có) Thường không cần biến môi trường đặc biệt.
 
 Khởi chạy hệ thống:
 
 docker-compose up -d --build
 
 
-Lệnh này sẽ build các Docker image (nếu chưa có) và khởi động tất cả các container trong chế độ nền. API Gateway sẽ chạy ở http://localhost:3003.
+Lệnh này sẽ build các Docker image và khởi động tất cả các container. API Gateway sẽ chạy ở http://localhost:3003.
 
 Chạy Tests (Trên môi trường Docker)
 
-Sau khi chạy docker-compose up -d, bạn có thể chạy test cho từng service bằng lệnh docker-compose exec:
+Sau khi chạy docker-compose up -d, bạn có thể chạy test cho từng service:
 
 # Chạy test cho Auth Service
 docker-compose exec thaian_auth_service npm test
@@ -100,84 +100,83 @@ docker-compose exec thaian_product_service npm test
 docker-compose exec thaian_order_service npm test
 
 
-Quy trình CI/CD
+Quy trình CI/CD (GitHub Actions)
 
-Dự án này sử dụng GitHub Actions để tự động hóa quy trình CI/CD, bao gồm các bước:
+Dự án này sử dụng GitHub Actions (.github/workflows/main.yml) để tự động hóa:
 
-Trigger: Chạy mỗi khi có push hoặc pull_request vào nhánh main.
+Trigger: Chạy khi có push hoặc pull_request vào nhánh main.
 
 Job test:
 
-Khởi động các container MongoDB và RabbitMQ.
+Khởi động MongoDB & RabbitMQ bằng Docker.
 
-Cài đặt dependencies (npm ci) và chạy tests (npm test) cho từng service (auth, order, product).
+Cài đặt dependencies (npm ci) & chạy tests (npm test) cho auth và order.
 
-Khởi động auth và order service trong nền.
+Khởi động auth & order service trong nền.
 
-Chạy test integration cho product service (bao gồm cả giao tiếp RabbitMQ).
+Cài đặt dependencies & chạy tests integration cho product (bao gồm giao tiếp RabbitMQ).
 
-Chạy ESLint để kiểm tra chất lượng code.
+Chạy ESLint để kiểm tra code style.
 
-Job build-docker: (Chỉ chạy nếu job test thành công)
+Job build-docker: (Chạy sau khi test thành công)
 
-Đăng nhập vào Docker Hub.
+Đăng nhập Docker Hub.
 
-Build Docker image cho từng service (auth, product, order, api-gateway).
+Build & Push Docker image cho từng service lên Docker Hub.
 
-Đẩy (push) các image đã build lên Docker Hub với tag latest.
-
-API Endpoints (Thông qua API Gateway - Port 3003)
+API Endpoints (Qua API Gateway - http://localhost:3003)
 
 Auth Service:
 
-POST /auth/register: Đăng ký người dùng mới. Body: { "username": "...", "password": "..." }
+POST /auth/register - Đăng ký. Body: { "username": "...", "password": "..." }
 
-POST /auth/login: Đăng nhập. Body: { "username": "...", "password": "..." }
+POST /auth/login - Đăng nhập. Body: { "username": "...", "password": "..." }
 
-GET /auth/dashboard: Endpoint ví dụ cần xác thực (yêu cầu header Authorization: Bearer <token>).
+GET /auth/dashboard - Ví dụ endpoint cần xác thực. (Header: Authorization: Bearer <token>)
 
 Product Service:
 
-POST /products: Tạo sản phẩm mới (yêu cầu token). Body: { "name": "...", "price": ..., "description": "..." }
+POST /products - Tạo sản phẩm. (Header: Authorization: Bearer <token>). Body: { "name": "...", "price": ..., "description": "..." }
 
-GET /products: Lấy danh sách sản phẩm (yêu cầu token).
+GET /products - Lấy danh sách sản phẩm. (Header: Authorization: Bearer <token>)
 
-GET /products/:id: Lấy chi tiết sản phẩm (yêu cầu token).
+GET /products/:id - Lấy chi tiết sản phẩm. (Header: Authorization: Bearer <token>)
 
-POST /products/buy: Đặt hàng (yêu cầu token). Body: { "ids": ["productId1", "productId2"] }
+POST /products/buy - Đặt hàng. (Header: Authorization: Bearer <token>). Body: { "ids": ["productId1", "productId2"] }
 
-GET /products/buy/:orderId: Lấy trạng thái đơn hàng (yêu cầu token).
+GET /products/buy/:orderId - Lấy trạng thái đơn hàng. (Header: Authorization: Bearer <token>)
 
-Lưu ý: Các endpoint trên là ví dụ, bạn có thể cần điều chỉnh tiền tố (/auth, /products) tùy theo cấu hình API Gateway.
+Lưu ý: Tiền tố /auth, /products có thể thay đổi tùy cấu hình API Gateway.
 
-Cấu trúc thư mục (Ví dụ)
+Cấu trúc thư mục
 
 .
-├── auth/                 # Auth Service
-│   ├── src/
-│   ├── test/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── .env
-├── product/              # Product Service
-│   ├── src/
-│   ├── test/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── .env
-├── order/                # Order Service
-│   ├── src/
-│   ├── test/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── .env
-├── api-gateway/          # API Gateway
+├── .github/
+│   └── workflows/
+│       └── main.yml         # GitHub Actions Workflow
+├── api-gateway/             # API Gateway Service
 │   ├── Dockerfile
 │   ├── index.js
 │   └── package.json
-├── .github/workflows/    # GitHub Actions workflow
-│   └── main.yml
-├── .eslintrc.js          # Cấu hình ESLint chung
+├── auth/                    # Auth Service
+│   ├── src/                 # Mã nguồn (controllers, services, models...)
+│   ├── test/                # Files test
+│   ├── Dockerfile
+│   ├── package.json
+│   └── .env                 # File biến môi trường (tạo thủ công)
+├── order/                   # Order Service
+│   ├── src/
+│   ├── test/
+│   ├── Dockerfile
+│   ├── package.json
+│   └── .env
+├── product/                 # Product Service
+│   ├── src/
+│   ├── test/
+│   ├── Dockerfile
+│   ├── package.json
+│   └── .env
+├── .eslintrc.js             # Cấu hình ESLint chung
 ├── .gitignore
-├── docker-compose.yml    # Cấu hình Docker Compose
-└── README.md             # File bạn đang đọc
+├── docker-compose.yml       # Cấu hình Docker Compose cho môi trường local
+└── README.md                # File bạn đang đọc
