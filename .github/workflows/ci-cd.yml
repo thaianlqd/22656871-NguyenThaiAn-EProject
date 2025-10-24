@@ -336,7 +336,7 @@
 #           tags: thaianlqd050204/microservices-gateway:latest
 
 
-##=> thai an - update:
+##=> thai an - update - tăng tốc:
 name: CI/CD Pipeline for Microservices
 
 on:
