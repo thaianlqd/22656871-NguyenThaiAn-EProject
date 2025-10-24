@@ -371,7 +371,7 @@ jobs:
         run: |
           echo "Waiting for dependencies..."
           npm install -g wait-on
-          wait-on tcp:27017 tcp:5672 -t 30000
+          wait-on tcp:27017 tcp:5672 -t 20000
 
       - name: Install All Dependencies
         run: |
@@ -413,8 +413,8 @@ jobs:
               echo "Auth service is responding!"
               exit 0
             fi
-            echo "Attempt $i/30: Auth service not yet responsive. Retrying in 2 seconds..."
-            sleep 2
+            echo "Attempt $i/30: Auth service not yet responsive. Retrying in 1 seconds..."
+            sleep 1
           done
           
           echo "::error::Auth service failed to start in time."
