@@ -47,17 +47,17 @@ const express = require("express");
 const isAuthenticated = require("../utils/isAuthenticated");
 // Không cần require ProductController nữa
 
+// Phải export ra một HÀM như thế này
 module.exports = function(productController) {
   const router = express.Router();
 
+  // Sử dụng controller được truyền vào
   router.post("/", isAuthenticated, productController.createProduct);
   router.get("/", isAuthenticated, productController.getProducts);
   router.post("/buy", isAuthenticated, productController.createOrder);
   router.get("/buy/:orderId", isAuthenticated, productController.getOrderStatus);
-
-  // --- THÊM LẠI isAuthenticated ---
   router.get("/:id", isAuthenticated, productController.getProductById); 
-  // --- KẾT THÚC SỬA ---
 
-  return router;
+  return router; // Hàm này trả về router
 };
+
