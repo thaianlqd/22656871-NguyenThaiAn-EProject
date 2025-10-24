@@ -371,7 +371,7 @@ jobs:
         run: |
           echo "Waiting for dependencies..."
           npm install -g wait-on
-          wait-on tcp:27017 tcp:5672 -t 15000
+          wait-on tcp:27017 tcp:5672 -t 5000
 
       - name: Install All Dependencies
         run: |
@@ -406,7 +406,7 @@ jobs:
           cd order && nohup npm start > nohup.out 2>&1 &
           
           echo "Waiting for Auth service to respond..."
-          for i in {1..15}; do
+          for i in {1..5}; do
             # SỬA LỖI: Dùng -sS, bỏ _ và f. Chuyển stdout sang /dev/null
             # Lệnh này sẽ thành công miễn là server trả về bất kỳ phản hồi HTTP nào (kể cả 400).
             if curl -sS --max-time 1 http://localhost:3000/login -X POST > /dev/null 2>&1; then
