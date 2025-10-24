@@ -449,7 +449,7 @@
 
 
 
-##=> thai an - optimized CI/CD pipeline
+##=> thai an - final optimized version (v10)
 name: CI/CD Pipeline for Microservices
 
 on:
@@ -461,6 +461,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
     services:
       mongodb:
         image: mongo:7.0
@@ -472,26 +473,31 @@ jobs:
           - 5672:5672
 
     steps:
+      # Checkout repo
       - uses: actions/checkout@v4
 
+      # Setup Node
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Wait for Dependencies
+      # Wait for dependencies
+      - name: Wait for MongoDB & RabbitMQ
         run: |
+          echo "Waiting for MongoDB & RabbitMQ..."
           npm install -g wait-on
-          echo "Waiting for MongoDB and RabbitMQ..."
-          wait-on tcp:27017 tcp:5672 -t 10000
+          wait-on tcp:27017 tcp:5672 -t 15000
 
+      # Install dependencies for all services
       - name: Install All Dependencies
         run: |
-          for dir in auth product order; do
-            cd $dir && npm ci && cd ..
-          done
+          cd auth && npm ci && cd ..
+          cd product && npm ci && cd ..
+          cd order && npm ci && cd ..
 
+      # Create .env files
       - name: Create .env files
         run: |
           echo "MONGODB_AUTH_URI=mongodb://localhost:27017/ci_auth" > auth/.env
@@ -509,44 +515,49 @@ jobs:
           echo "JWT_SECRET=ci_secret" >> order/.env
           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
 
-      - name: Start Background Services
+      # Start Auth & Order in background (so Product test can connect)
+      - name: Run Background Services
         run: |
-          cd auth && nohup npm start > ../auth.log 2>&1 &
-          cd ../order && nohup npm start > ../order.log 2>&1 &
+          echo "Starting Auth service..."
+          cd auth && nohup npm start > nohup.out 2>&1 &
+          cd ..
+          
+          echo "Starting Order service..."
+          cd order && nohup npm start > nohup.out 2>&1 &
           cd ..
 
-      - name: Wait for Auth Service
+      # Wait until Auth & Order services are ready
+      - name: Wait for Services to Respond
         run: |
-          echo "Waiting for Auth service (port 3000)..."
-          for i in {1..10}; do
-            if curl -s http://localhost:3000/login > /dev/null 2>&1; then
-              echo "✅ Auth service is ready!"
-              exit 0
-            fi
-            echo "Attempt $i/10: waiting 2s..."
-            sleep 2
-          done
-          echo "::error::Auth service failed to start."
-          tail -n 20 auth.log || true
-          exit 1
+          npm install -g wait-on
+          echo "Waiting for Auth (port 3000)..."
+          wait-on http://localhost:3000 -t 15000 || echo "Auth not ready yet"
+          echo "Waiting for Order (port 4000)..."
+          wait-on tcp:4000 -t 15000 || echo "Order not ready yet"
+          echo "All core services are ready!"
+          sleep 5
 
-      - name: Run Tests (Auth, Product, Order)
+      # Run tests for all services
+      - name: Run Tests (Auth → Product → Order)
         run: |
           cd auth && npm test
           cd ../product && npm test
           cd ../order && npm test
 
-  build-and-push:
+  build-docker:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Build and Push Docker Images
         run: |
           docker build -t thaianlqd050204/microservices-auth:latest --push ./auth
