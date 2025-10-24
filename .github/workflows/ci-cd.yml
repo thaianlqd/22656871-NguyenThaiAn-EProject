@@ -449,9 +449,8 @@
 
 
 
-##=> thai an - super optimized CI/CD 🚀
-##=> thai an - update:
-name: CI/CD Pipeline for Microservices (Optimized)
+##=> thai an - optimized CI/CD pipeline
+name: CI/CD Pipeline for Microservices
 
 on:
   push:
@@ -462,9 +461,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [auth, product, order]
     services:
       mongodb:
         image: mongo:7.0
@@ -481,53 +477,66 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: '20'
           cache: 'npm'
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ${{ matrix.service }}/node_modules
-          key: ${{ runner.os }}-${{ matrix.service }}-${{ hashFiles(format('{0}/package-lock.json', matrix.service)) }}
-
-      - name: Install dependencies
+      - name: Wait for Dependencies
         run: |
-          cd ${{ matrix.service }}
-          npm ci
-
-      # ✅ CHỜ RabbitMQ & Mongo sẵn sàng (fix lỗi Socket closed)
-      - name: Wait for MongoDB & RabbitMQ
-        run: |
-          echo "⏳ Waiting for MongoDB & RabbitMQ to be ready..."
           npm install -g wait-on
-          wait-on tcp:27017 tcp:5672 -t 20000
-          echo "✅ MongoDB & RabbitMQ are ready!"
+          echo "Waiting for MongoDB and RabbitMQ..."
+          wait-on tcp:27017 tcp:5672 -t 10000
 
-      - name: Create .env file
+      - name: Install All Dependencies
         run: |
-          if [ "${{ matrix.service }}" = "auth" ]; then
-            echo "MONGODB_AUTH_URI=mongodb://localhost:27017/ci_auth" > auth/.env
-            echo "JWT_SECRET=ci_secret" >> auth/.env
-            echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> auth/.env
-          elif [ "${{ matrix.service }}" = "product" ]; then
-            echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/ci_product" > product/.env
-            echo "JWT_SECRET=ci_secret" >> product/.env
-            echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
-            echo "LOGIN_TEST_USER=ci_user" >> product/.env
-            echo "LOGIN_TEST_PASSWORD=ci_password" >> product/.env
-            echo "AUTH_SERVICE_URL=http://localhost:3000" >> product/.env
-          else
-            echo "MONGODB_ORDER_URI=mongodb://localhost:27017/ci_order" > order/.env
-            echo "JWT_SECRET=ci_secret" >> order/.env
-            echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
-          fi
+          for dir in auth product order; do
+            cd $dir && npm ci && cd ..
+          done
 
-      - name: Run tests
+      - name: Create .env files
         run: |
-          cd ${{ matrix.service }}
-          npm test
+          echo "MONGODB_AUTH_URI=mongodb://localhost:27017/ci_auth" > auth/.env
+          echo "JWT_SECRET=ci_secret" >> auth/.env
+          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> auth/.env
 
-  build-docker:
+          echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/ci_product" > product/.env
+          echo "JWT_SECRET=ci_secret" >> product/.env
+          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
+          echo "LOGIN_TEST_USER=ci_user" >> product/.env
+          echo "LOGIN_TEST_PASSWORD=ci_password" >> product/.env
+          echo "AUTH_SERVICE_URL=http://localhost:3000" >> product/.env
+
+          echo "MONGODB_ORDER_URI=mongodb://localhost:27017/ci_order" > order/.env
+          echo "JWT_SECRET=ci_secret" >> order/.env
+          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
+
+      - name: Start Background Services
+        run: |
+          cd auth && nohup npm start > ../auth.log 2>&1 &
+          cd ../order && nohup npm start > ../order.log 2>&1 &
+          cd ..
+
+      - name: Wait for Auth Service
+        run: |
+          echo "Waiting for Auth service (port 3000)..."
+          for i in {1..10}; do
+            if curl -s http://localhost:3000/login > /dev/null 2>&1; then
+              echo "✅ Auth service is ready!"
+              exit 0
+            fi
+            echo "Attempt $i/10: waiting 2s..."
+            sleep 2
+          done
+          echo "::error::Auth service failed to start."
+          tail -n 20 auth.log || true
+          exit 1
+
+      - name: Run Tests (Auth, Product, Order)
+        run: |
+          cd auth && npm test
+          cd ../product && npm test
+          cd ../order && npm test
+
+  build-and-push:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -544,4 +553,3 @@ jobs:
           docker build -t thaianlqd050204/microservices-product:latest --push ./product
           docker build -t thaianlqd050204/microservices-order:latest --push ./order
           docker build -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway
-
