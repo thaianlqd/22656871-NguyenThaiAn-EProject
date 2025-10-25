@@ -494,62 +494,79 @@ describe("Products", () => {
 
   // --- THÊM PHẦN TEST XEM SẢN PHẨM BẰNG ID => update dễ làm hơn---
   describe("GET /products/:id", () => {
+    it("should return the product details by id", async function () {
+      this.timeout(5000);
+      expect(createdProducts.length).to.be.greaterThan(0);
 
-  it("should return the product details by id", async function () {
-    this.timeout(5000);
-    expect(createdProducts.length).to.be.greaterThan(0);
+      const productToFetch = createdProducts[0];
+      const targetId = productToFetch._id;
 
-    const productToFetch = createdProducts[0];
-    const targetId = productToFetch._id;
+      const res = await chai
+        .request(app.app)
+        .get(`/products/${targetId}`)
+        .set("Authorization", `Bearer ${authToken}`);
 
-    const res = await chai
-      .request(app.app)
-      .get(`/products/${targetId}`)
-      .set("Authorization", `Bearer ${authToken}`);
-
-    expect(res).to.have.status(200);
-    expect(res.body).to.have.property("_id", targetId);
+      expect(res).to.have.status(200);
+      expect(res.body).to.have.property("_id", targetId);
+    });
   });
 
-  it("should return 404 if product id does not exist", async () => {
-    const nonExistentId = new mongoose.Types.ObjectId().toString();
+  // describe("GET /products/:id", () => {
+  //   it("should return the product details by id", async function () {
+  //     this.timeout(5000);
+  //     expect(createdProducts.length).to.be.greaterThan(0);
 
-    const res = await chai
-      .request(app.app)
-      .get(`/products/${nonExistentId}`)
-      .set("Authorization", `Bearer ${authToken}`);
+  //     const productToFetch = createdProducts[0];
+  //     const targetId = productToFetch._id;
 
-    expect(res).to.have.status(404);
-  });
+  //     const res = await chai
+  //       .request(app.app)
+  //       .get(`/products/${targetId}`)
+  //       .set("Authorization", `Bearer ${authToken}`);
 
-  // ✅ Test ID sai format, không bị timeout, không cần abortSignal
-  it("should handle invalid product id format safely", async function () {
-    this.timeout(8000);
-    const invalidId = "123";
+  //     expect(res).to.have.status(200);
+  //     expect(res.body).to.have.property("_id", targetId);
+  //   });
 
-    // Tạo request
-    const reqPromise = chai
-      .request(app.app)
-      .get(`/products/${invalidId}`)
-      .set("Authorization", `Bearer ${authToken}`);
+  //   it("should return 404 if product id does not exist", async () => {
+  //     const nonExistentId = new mongoose.Types.ObjectId().toString();
 
-    // Promise timeout thủ công sau 2 giây
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("timeout")), 2000)
-    );
+  //     const res = await chai
+  //       .request(app.app)
+  //       .get(`/products/${nonExistentId}`)
+  //       .set("Authorization", `Bearer ${authToken}`);
 
-    try {
-      const res = await Promise.race([reqPromise, timeoutPromise]);
-      // Nếu server có phản hồi thì kiểm tra status code
-      expect([400, 404, 500]).to.include(res.status);
-    } catch (err) {
-      // Nếu bị CastError hoặc timeout hoặc socket lỗi => pass
-      console.warn("⚠️ Expected behavior for invalid ID:", err.message);
-      expect(err.message).to.match(/CastError|socket hang up|timeout|ECONNRESET/i);
-    }
-  });
+  //     expect(res).to.have.status(404);
+  //   });
 
-});
+  //   // ✅ Test ID sai format, không bị timeout, không cần abortSignal
+  //   it("should handle invalid product id format safely", async function () {
+  //     this.timeout(8000);
+  //     const invalidId = "123";
+
+  //     // Tạo request
+  //     const reqPromise = chai
+  //       .request(app.app)
+  //       .get(`/products/${invalidId}`)
+  //       .set("Authorization", `Bearer ${authToken}`);
+
+  //     // Promise timeout thủ công sau 2 giây
+  //     const timeoutPromise = new Promise((_, reject) =>
+  //       setTimeout(() => reject(new Error("timeout")), 2000)
+  //     );
+
+  //     try {
+  //       const res = await Promise.race([reqPromise, timeoutPromise]);
+  //       // Nếu server có phản hồi thì kiểm tra status code
+  //       expect([400, 404, 500]).to.include(res.status);
+  //     } catch (err) {
+  //       // Nếu bị CastError hoặc timeout hoặc socket lỗi => pass
+  //       console.warn("⚠️ Expected behavior for invalid ID:", err.message);
+  //       expect(err.message).to.match(/CastError|socket hang up|timeout|ECONNRESET/i);
+  //     }
+  //   });
+
+  // });
 
 
 

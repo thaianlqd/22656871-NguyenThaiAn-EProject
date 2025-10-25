@@ -277,14 +277,10 @@ class ProductController {
   }
 
   //phần 8: phần thêm vào đây nè xem san pham = id
-  async getproductid(req, res){
-    const product = await Product.findById(req.params.id);
+  async getid(req, res){
+      const product = await Product.findById(req.params.id);
 
-    if(!product){
-      return res.status(404).json({message: "product not found"});
-    }
-
-    res.status(200).json(product);
+      res.status(200).json(product);
   }
 
 
