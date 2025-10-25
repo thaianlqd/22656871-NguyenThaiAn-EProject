@@ -160,19 +160,19 @@ Dưới đây là hình ảnh minh họa kết quả thực hiện các API endp
 ![Login](./public/results/login.png)
 
 3. Truy cập Dashboard (Cần Token) (/auth/dashboard)
-![Dashboard](./public/results/dashboard.png.png)
+![Dashboard](./public/results/dashboard.png)
 
 4. Thêm sản phẩm mới (/products)
-![add_sp](./public/results/sanpham_them.png.png)
+![add_sp](./public/results/sanpham_them.png)
 
 5. Xem danh sách sản phẩm (/products)
-![all_sp](./public/results/sanpham_xem_all.png.png)
+![all_sp](./public/results/sanpham_xem_all.png)
 
 6. Xem chi tiết sản phẩm bằng ID (/products/:id)
-![id_sp](./public/results/sanphan_xem_id.png.png)
+![id_sp](./public/results/sanphan_xem_id.png)
 
 7. Đặt hàng (/products/buy)
-![dathang](./public/results/dathang.png.png)
+![dathang](./public/results/dathang.png)
 
 8. Xem trạng thái đơn hàng (/products/buy/:orderId)
-![id_donhang](./public/results/xem_hoadon_id.png.png)
+![id_donhang](./public/results/xem_hoadon_id.png)
