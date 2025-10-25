@@ -492,6 +492,7 @@ describe("Products", () => {
   //   });
   // });
 
+  // --- THÊM PHẦN TEST XEM SẢN PHẨM BẰNG ID => update dễ làm hơn---
   describe("GET /products/:id", () => {
 
   it("should return the product details by id", async function () {

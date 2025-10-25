@@ -29,7 +29,7 @@ const orderSchema = new mongoose.Schema({
   products: [{
     name: String,
     price: Number,
-    description: String,
+    // description: String,
   }],
   // THÊM VÀO: Thêm trường user để lưu lại ai đã đặt hàng
   user: {

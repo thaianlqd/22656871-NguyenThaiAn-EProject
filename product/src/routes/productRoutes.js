@@ -29,7 +29,10 @@ const productController = new ProductController();
 router.post("/", isAuthenticated, productController.createProduct);
 router.get("/", isAuthenticated, productController.getProducts);
 
-router.get("/:id", isAuthenticated, productController.getProductById); 
+router.get("/:id", isAuthenticated, productController.getproductid); 
+
+
+// router.get("/:id", isAuthenticated, productController.getProductById); 
 
 // Các route liên quan đến việc mua hàng
 router.post("/buy", isAuthenticated, productController.createOrder);
