@@ -111,12 +111,12 @@ services:
       - microservices-net
     # --- THÊM MỚI ---
     # Healthcheck để đảm bảo RabbitMQ sẵn sàng trước khi các service khác khởi động
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
-      interval: 5s
-      timeout: 3s
-      retries: 3
-      start_period: 5s  # Thêm: Bỏ qua kiểm tra đầu tiên trong 5s để container ổn định
+    # healthcheck:
+    #   test: ["CMD", "rabbitmq-diagnostics", "check_running", "-q"]
+    #   interval: 3s
+    #   timeout: 3s
+    #   retries: 3
+    #   start_period: 5s
 
   thaian_mongodb:
     image: mongo:7.0
@@ -128,12 +128,12 @@ services:
     restart: unless-stopped
     networks:
       - microservices-net
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 5s
-      timeout: 3s
-      retries: 3
-      start_period: 5s  # Thêm: Bỏ qua kiểm tra đầu tiên trong 5s để container ổn định
+    # healthcheck:
+    #   test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+    #   interval: 3s
+    #   timeout: 3s
+    #   retries: 3
+    #   start_period: 5s
 
   thaian_api_gateway:
     build: ./api-gateway
@@ -168,11 +168,14 @@ services:
     #   - microservices-net
     # --- ĐÃ SỬA ---
     # Bắt buộc chờ đến khi mongodb và rabbitmq "khỏe mạnh"
+    # depends_on:
+    #   thaian_mongodb:
+    #     condition: service_healthy
+    #   thaian_rabbitmq:
+    #     condition: service_healthy
     depends_on:
-      thaian_mongodb:
-        condition: service_healthy
-      thaian_rabbitmq:
-        condition: service_healthy
+      - thaian_mongodb
+      - thaian_rabbitmq
     restart: unless-stopped
     networks:
       - microservices-net
@@ -193,11 +196,14 @@ services:
     # networks:
     #   - microservices-net
     # --- ĐÃ SỬA ---
+    # depends_on:
+    #   thaian_mongodb:
+    #     condition: service_healthy
+    #   thaian_rabbitmq:
+    #     condition: service_healthy
     depends_on:
-      thaian_mongodb:
-        condition: service_healthy
-      thaian_rabbitmq:
-        condition: service_healthy
+      - thaian_mongodb
+      - thaian_rabbitmq
     restart: unless-stopped
     networks:
       - microservices-net
@@ -218,11 +224,14 @@ services:
     # networks:
     #   - microservices-net
     # --- ĐÃ SỬA ---
+    # depends_on:
+    #   thaian_mongodb:
+    #     condition: service_healthy
+    #   thaian_rabbitmq:
+    #     condition: service_healthy
     depends_on:
-      thaian_mongodb:
-        condition: service_healthy
-      thaian_rabbitmq:
-        condition: service_healthy
+      - thaian_mongodb
+      - thaian_rabbitmq
     restart: unless-stopped
     networks:
       - microservices-net
