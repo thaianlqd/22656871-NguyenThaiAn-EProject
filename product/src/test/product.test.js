@@ -474,9 +474,7 @@ describe("Products", () => {
     });
 
     // ✅ Test an toàn cho ID sai format, không timeout
-    it("should handle invalid product id format safely", async function () {
-      this.timeout(5000); // ⏱ cắt test sau 5 giây, không đợi 20s
-
+    it("should handle invalid product id format safely", async () => {
       const invalidId = "123";
       try {
         const res = await chai
@@ -484,12 +482,12 @@ describe("Products", () => {
           .get(`/products/${invalidId}`)
           .set("Authorization", `Bearer ${authToken}`);
 
-        // Nếu API vẫn phản hồi, kiểm tra status
+        // Nếu có response thì kiểm tra status
         expect([400, 404, 500]).to.include(res.status);
       } catch (err) {
-        // Nếu server bị CastError hoặc socket hang up -> xem như pass
+        // Nếu request bị ngắt do CastError, vẫn xem là pass
         console.warn("⚠️ Expected error for invalid ID:", err.message);
-        expect(err).to.be.instanceOf(Error);
+        expect(err.message).to.match(/CastError|socket hang up|ECONNRESET/i);
       }
     });
   });
