@@ -541,7 +541,7 @@ jobs:
           wait
         shell: bash
 
-    build-docker:
+build-docker:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
