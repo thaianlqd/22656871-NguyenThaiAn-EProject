@@ -453,8 +453,6 @@
 
 #testttt:
 #=> thai an - update: Tối ưu tốc độ cuối cùng n
-# => thai an - update - tối ưu tốc độ CI/CD (không đổi logic)
-# => thai an - update - tối ưu & fix lỗi build docker
 name: CI/CD Pipeline for Microservices
 
 on:
