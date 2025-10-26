@@ -29,9 +29,7 @@ const productController = new ProductController();
 router.post("/", isAuthenticated, productController.createProduct);
 router.get("/", isAuthenticated, productController.getProducts);
 
-router.get("/:id", isAuthenticated, productController.getid); 
-
-
+router.get("/:id", isAuthenticated, productController.getid);
 
 
 // router.get("/:id", isAuthenticated, productController.getProductById); hehe
