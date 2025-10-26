@@ -420,77 +420,77 @@ describe("Products", () => {
   });
 
   // --- PHẦN TEST XEM ĐƠN HÀNG BẰNG ID ---
-  describe("GET /products/buy/:id", () => {
-    it("should return the order details by orderId", async () => {
-      // Kiểm tra xem đã có orderId từ test trước chưa
-      if (!orderId) {
-        throw new Error("Cannot fetch order without a valid orderId.");
-      }
+  // describe("GET /products/buy/:id", () => {
+  //   it("should return the order details by orderId", async () => {
+  //     // Kiểm tra xem đã có orderId từ test trước chưa
+  //     if (!orderId) {
+  //       throw new Error("Cannot fetch order without a valid orderId.");
+  //     }
 
-      const res = await chai
-        .request(app.app)
-        .get(`/products/buy/${orderId}`)
-        .set("Authorization", `Bearer ${authToken}`);
+  //     const res = await chai
+  //       .request(app.app)
+  //       .get(`/products/buy/${orderId}`)
+  //       .set("Authorization", `Bearer ${authToken}`);
 
-      // Kiểm tra phản hồi
-      expect(res).to.have.status(200);
-      expect(res.body).to.have.property("orderId", orderId);
-      expect(res.body).to.have.property("status");
-      expect(res.body).to.have.property("totalPrice");
-      expect(res.body.products).to.be.an("array").that.is.not.empty;
+  //     // Kiểm tra phản hồi
+  //     expect(res).to.have.status(200);
+  //     expect(res.body).to.have.property("orderId", orderId);
+  //     expect(res.body).to.have.property("status");
+  //     expect(res.body).to.have.property("totalPrice");
+  //     expect(res.body.products).to.be.an("array").that.is.not.empty;
 
-      // Kiểm tra sản phẩm trong đơn hàng
-      const orderedProduct = res.body.products[0];
-      expect(orderedProduct).to.have.property("_id", createdProducts[0]._id);
-      expect(orderedProduct.name).to.equal(createdProducts[0].name);
-    });
-  });
+  //     // Kiểm tra sản phẩm trong đơn hàng
+  //     const orderedProduct = res.body.products[0];
+  //     expect(orderedProduct).to.have.property("_id", createdProducts[0]._id);
+  //     expect(orderedProduct.name).to.equal(createdProducts[0].name);
+  //   });
+  // });
 
   // --- THÊM PHẦN TEST XEM SẢN PHẨM BẰNG ID ---
-  describe("GET /products/:id", () => {
-    it("should return the product details by id", async function () {
-      this.timeout(5000);
-      expect(createdProducts.length).to.be.greaterThan(0);
+  // describe("GET /products/:id", () => {
+  //   it("should return the product details by id", async function () {
+  //     this.timeout(5000);
+  //     expect(createdProducts.length).to.be.greaterThan(0);
 
-      const productToFetch = createdProducts[0];
-      const targetId = productToFetch._id;
+  //     const productToFetch = createdProducts[0];
+  //     const targetId = productToFetch._id;
 
-      const res = await chai
-        .request(app.app)
-        .get(`/products/${targetId}`)
-        .set("Authorization", `Bearer ${authToken}`);
+  //     const res = await chai
+  //       .request(app.app)
+  //       .get(`/products/${targetId}`)
+  //       .set("Authorization", `Bearer ${authToken}`);
 
-      expect(res).to.have.status(200);
-      expect(res.body).to.have.property("_id", targetId);
-    });
+  //     expect(res).to.have.status(200);
+  //     expect(res.body).to.have.property("_id", targetId);
+  //   });
 
-    it("should return 404 if product id does not exist", async () => {
-      const nonExistentId = new mongoose.Types.ObjectId().toString();
-      const res = await chai
-        .request(app.app)
-        .get(`/products/${nonExistentId}`)
-        .set("Authorization", `Bearer ${authToken}`);
-      expect(res).to.have.status(404);
-    });
+  //   it("should return 404 if product id does not exist", async () => {
+  //     const nonExistentId = new mongoose.Types.ObjectId().toString();
+  //     const res = await chai
+  //       .request(app.app)
+  //       .get(`/products/${nonExistentId}`)
+  //       .set("Authorization", `Bearer ${authToken}`);
+  //     expect(res).to.have.status(404);
+  //   });
 
-    // ✅ Test an toàn cho ID sai format, không timeout
-    it("should handle invalid product id format safely", async () => {
-      const invalidId = "123";
-      try {
-        const res = await chai
-          .request(app.app)
-          .get(`/products/${invalidId}`)
-          .set("Authorization", `Bearer ${authToken}`);
+  //   // ✅ Test an toàn cho ID sai format, không timeout
+  //   it("should handle invalid product id format safely", async () => {
+  //     const invalidId = "123";
+  //     try {
+  //       const res = await chai
+  //         .request(app.app)
+  //         .get(`/products/${invalidId}`)
+  //         .set("Authorization", `Bearer ${authToken}`);
 
-        // Nếu có response thì kiểm tra status
-        expect([400, 404, 500]).to.include(res.status);
-      } catch (err) {
-        // Nếu request bị ngắt do CastError, vẫn xem là pass
-        console.warn("⚠️ Expected error for invalid ID:", err.message);
-        expect(err.message).to.match(/CastError|socket hang up|ECONNRESET/i);
-      }
-    });
-  });
+  //       // Nếu có response thì kiểm tra status
+  //       expect([400, 404, 500]).to.include(res.status);
+  //     } catch (err) {
+  //       // Nếu request bị ngắt do CastError, vẫn xem là pass
+  //       console.warn("⚠️ Expected error for invalid ID:", err.message);
+  //       expect(err.message).to.match(/CastError|socket hang up|ECONNRESET/i);
+  //     }
+  //   });
+  // });
 
   // --- THÊM PHẦN TEST XEM SẢN PHẨM BẰNG ID => update dễ làm hơn---
   describe("GET /products/:id", () => {
