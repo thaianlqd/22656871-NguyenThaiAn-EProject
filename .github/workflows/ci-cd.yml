@@ -454,6 +454,7 @@
 #testttt:
 #=> thai an - update: Tối ưu tốc độ cuối cùng n
 # => thai an - update - tối ưu tốc độ CI/CD (không đổi logic)
+# => thai an - update - tối ưu & fix lỗi build docker
 name: CI/CD Pipeline for Microservices
 
 on:
@@ -486,14 +487,11 @@ jobs:
 
       - name: Wait for Dependencies to be Ready
         run: |
-          echo "Waiting for MongoDB & RabbitMQ..."
           npm install -g wait-on
           wait-on tcp:27017 tcp:5672 -t 15000
 
-      # ⚡ Dùng npm ci nhanh & sạch hơn npm install
       - name: Install All Dependencies (Parallel)
         run: |
-          echo "Installing all services in parallel..."
           cd auth && npm ci &
           cd product && npm ci &
           cd order && npm ci &
@@ -517,14 +515,11 @@ jobs:
           echo "JWT_SECRET=ci_secret" >> order/.env
           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
 
-      # --- Chạy nền song song + kiểm tra nhanh hơn ---
       - name: Run Background Services and Wait
         run: |
-          echo "Starting Auth and Order services in background..."
           cd auth && nohup npm start > nohup.out 2>&1 &
           cd ../order && nohup npm start > nohup.out 2>&1 &
 
-          echo "Waiting for Auth service to respond..."
           for i in {1..20}; do
             if curl -sS --max-time 1 http://localhost:3000/login -X POST > /dev/null 2>&1; then
               echo "Auth service is responding!"
@@ -535,16 +530,13 @@ jobs:
           done
 
           echo "::error::Auth service failed to start in time."
-          echo "--- Last 20 lines of Auth log ---"
           tail -n 20 auth/nohup.out || echo "auth/nohup.out not found."
           exit 1
         shell: bash
 
-      # --- Chạy test (tối ưu chuyển hướng IO & dừng khi lỗi) ---
       - name: Run Tests (Auth, Product, Order)
         run: |
           set -e
-          echo "Running tests for all services..."
           cd auth && npm test > test.log 2>&1 && echo "✅ Auth tests passed!" &
           cd ../product && npm test > test.log 2>&1 && echo "✅ Product tests passed!" &
           cd ../order && npm test > test.log 2>&1 && echo "✅ Order tests passed!" &
@@ -564,22 +556,44 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # ⚡ Dùng Buildx để tận dụng cache build
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and Push Images (cached)
+      # ⚡ Build từng image riêng biệt, có cache GHA
+      - name: Build & Push Auth Service
         uses: docker/build-push-action@v5
         with:
+          context: ./auth
           push: true
-          platforms: linux/amd64
-          tags: |
-            thaianlqd050204/microservices-auth:latest
-            thaianlqd050204/microservices-product:latest
-            thaianlqd050204/microservices-order:latest
-            thaianlqd050204/microservices-gateway:latest
+          tags: thaianlqd050204/microservices-auth:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          context: .
+
+      - name: Build & Push Product Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./product
+          push: true
+          tags: thaianlqd050204/microservices-product:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & Push Order Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./order
+          push: true
+          tags: thaianlqd050204/microservices-order:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & Push API Gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api-gateway
+          push: true
+          tags: thaianlqd050204/microservices-gateway:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
 
