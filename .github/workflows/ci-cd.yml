@@ -450,10 +450,7 @@
 
 
 
-
-#testttt:
-#=> thai an - update: Tối ưu tốc độ cuối cùng n
-# => thai an - update: Tối ưu tốc độ cuối cùng nhất
+# => thai an - update: Tối ưu tốc độ cuối cùng nhất 2
 name: CI/CD Pipeline for Microservices
 
 on:
