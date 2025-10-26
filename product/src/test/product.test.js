@@ -420,31 +420,31 @@ describe("Products", () => {
   });
 
   // --- PHẦN TEST XEM ĐƠN HÀNG BẰNG ID ---
-  // describe("GET /products/buy/:id", () => {
-  //   it("should return the order details by orderId", async () => {
-  //     // Kiểm tra xem đã có orderId từ test trước chưa
-  //     if (!orderId) {
-  //       throw new Error("Cannot fetch order without a valid orderId.");
-  //     }
+  describe("GET /products/buy/:id", () => {
+    it("should return the order details by orderId", async () => {
+      // Kiểm tra xem đã có orderId từ test trước chưa
+      if (!orderId) {
+        throw new Error("Cannot fetch order without a valid orderId.");
+      }
 
-  //     const res = await chai
-  //       .request(app.app)
-  //       .get(`/products/buy/${orderId}`)
-  //       .set("Authorization", `Bearer ${authToken}`);
+      const res = await chai
+        .request(app.app)
+        .get(`/products/buy/${orderId}`)
+        .set("Authorization", `Bearer ${authToken}`);
 
-  //     // Kiểm tra phản hồi
-  //     expect(res).to.have.status(200);
-  //     expect(res.body).to.have.property("orderId", orderId);
-  //     expect(res.body).to.have.property("status");
-  //     expect(res.body).to.have.property("totalPrice");
-  //     expect(res.body.products).to.be.an("array").that.is.not.empty;
+      // Kiểm tra phản hồi
+      expect(res).to.have.status(200);
+      expect(res.body).to.have.property("orderId", orderId);
+      expect(res.body).to.have.property("status");
+      expect(res.body).to.have.property("totalPrice");
+      expect(res.body.products).to.be.an("array").that.is.not.empty;
 
-  //     // Kiểm tra sản phẩm trong đơn hàng
-  //     const orderedProduct = res.body.products[0];
-  //     expect(orderedProduct).to.have.property("_id", createdProducts[0]._id);
-  //     expect(orderedProduct.name).to.equal(createdProducts[0].name);
-  //   });
-  // });
+      // Kiểm tra sản phẩm trong đơn hàng
+      const orderedProduct = res.body.products[0];
+      expect(orderedProduct).to.have.property("_id", createdProducts[0]._id);
+      expect(orderedProduct.name).to.equal(createdProducts[0].name);
+    });
+  });
 
   // --- THÊM PHẦN TEST XEM SẢN PHẨM BẰNG ID ---
   // describe("GET /products/:id", () => {
