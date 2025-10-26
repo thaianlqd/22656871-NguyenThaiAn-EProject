@@ -453,6 +453,7 @@
 
 #testttt:
 #=> thai an - update: Tối ưu tốc độ cuối cùng n
+# => thai an - update: Tối ưu tốc độ cuối cùng nhất
 name: CI/CD Pipeline for Microservices
 
 on:
@@ -541,7 +542,7 @@ jobs:
           wait
         shell: bash
 
-build-docker:
+  build-docker:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -578,6 +579,7 @@ build-docker:
           build_push gateway ./api-gateway &
           wait
         shell: bash
+
 
 
 
