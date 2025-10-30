@@ -140,6 +140,9 @@
 
 //ahaihihi:
 //=> thai an - update:
+//=> thai an - update:
+//=> thai an - update:
+//=> thai an - update:
 const express = require("express");
 const mongoose = require("mongoose");
 const config = require("./config");
@@ -191,8 +194,11 @@ class App {
   }
 
   setRoutes() {
-    // API Gateway sẽ xử lý tiền tố /products
-    this.app.use("/", productsRouter);
+    // === SỬA LẠI CHỖ NÀY ĐỂ FIX LỖI CI 404 ===
+    // File test (product.test.js) nó gọi /products
+    // Chúng ta "cắt" tiền tố /products ở đây
+    // Router (productRoutes.js) sẽ chỉ nhận /
+    this.app.use("/products", productsRouter);
   }
 
   // SỬA LẠI HÀM NÀY (Thêm WithRetry)
@@ -203,11 +209,10 @@ class App {
         await MessageBroker.connect();
         connected = true;
         console.log("Product Service: RabbitMQ connected (finally!)");
-        
+
         // BẠN PHẢI DỜI HÀM LISTEN VÀO ĐÂY
         // Nó chỉ được chạy sau khi RabbitMQ kết nối thành công
         productController.listenForOrderCompletion();
-
       } catch (error) {
         console.log(
           "Product Service: RabbitMQ connection failed. Retrying in 5 seconds..."
@@ -234,6 +239,9 @@ class App {
 }
 
 module.exports = App;
+
+
+
 
 
 
