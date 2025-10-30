@@ -337,121 +337,6 @@
 
 
 ##=> thai an - update - tăng tốc lan 9
-name: CI/CD Pipeline for Microservices
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    services:
-      mongodb:
-        image: mongo:7.0
-        ports:
-          - 27017:27017
-      rabbitmq:
-        image: rabbitmq:3-management-alpine
-        ports:
-          - 5672:5672
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          
-      - name: Wait for Dependencies to be Ready
-        run: |
-          echo "Waiting for dependencies..."
-          npm install -g wait-on
-          wait-on tcp:27017 tcp:5672 -t 20000
-
-      - name: Install All Dependencies
-        run: |
-          cd auth && npm install &
-          cd product && npm install &
-          cd order && npm install &
-          wait
-          
-      - name: Create .env files
-        run: |
-          echo "MONGODB_AUTH_URI=mongodb://localhost:27017/ci_auth" > auth/.env
-          echo "JWT_SECRET=ci_secret" >> auth/.env
-          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> auth/.env
-
-          echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/ci_product" > product/.env
-          echo "JWT_SECRET=ci_secret" >> product/.env
-          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
-          echo "LOGIN_TEST_USER=ci_user" >> product/.env
-          echo "LOGIN_TEST_PASSWORD=ci_password" >> product/.env
-          echo "AUTH_SERVICE_URL=http://localhost:3000" >> product/.env
-          
-          echo "MONGODB_ORDER_URI=mongodb://localhost:27017/ci_order" > order/.env
-          echo "JWT_SECRET=ci_secret" >> order/.env
-          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
-
-      # --- PHIÊN BẢN SỬA LỖI CUỐI CÙNG ---
-      - name: Run Background Services and Wait
-        run: |
-          echo "Starting Auth service in background..."
-          cd auth && nohup npm start > nohup.out 2>&1 &
-          
-          echo "Starting Order service in background..."
-          cd order && nohup npm start > nohup.out 2>&1 &
-          
-          echo "Waiting for Auth service to respond..."
-          for i in {1..30}; do
-            # SỬA LỖI: Dùng -sS, bỏ _ và f. Chuyển stdout sang /dev/null
-            # Lệnh này sẽ thành công miễn là server trả về bất kỳ phản hồi HTTP nào (kể cả 400).
-            if curl -sS --max-time 1 http://localhost:3000/login -X POST > /dev/null 2>&1; then
-              echo "Auth service is responding!"
-              exit 0
-            fi
-            echo "Attempt $i/30: Auth service not yet responsive. Retrying in 1 seconds..."
-            sleep 1
-          done
-          
-          echo "::error::Auth service failed to start in time."
-          echo "--- Last 20 lines of Auth service log ---"
-          tail -n 20 auth/nohup.out || echo "auth/nohup.out not found."
-          exit 1
-
-      # --- Chạy Tests ---
-      - name: Run Tests (Auth, Product, Order)
-        run: |
-          cd auth && npm test
-          cd ../product && npm test
-          cd ../order && npm test
-
-  build-docker:
-    needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build and Push Images
-        run: |
-          docker build -t thaianlqd050204/microservices-auth:latest --push ./auth
-          docker build -t thaianlqd050204/microservices-product:latest --push ./product
-          docker build -t thaianlqd050204/microservices-order:latest --push ./order
-          docker build -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway
-
-
-
-
-#test update toc do 
 # name: CI/CD Pipeline for Microservices
 
 # on:
@@ -482,33 +367,6 @@ jobs:
 #           node-version: '20'
 #           cache: 'npm'
           
-#       # --- TỐI ƯU HÓA: CACHE NODE_MODULES CHO TỪNG SERVICE ---
-#       - name: Cache Auth node_modules
-#         uses: actions/cache@v4
-#         with:
-#           path: auth/node_modules
-#           key: ${{ runner.os }}-node-${{ hashFiles('auth/package-lock.json') }}
-#           restore-keys: |
-#             ${{ runner.os }}-node-
-
-#       - name: Cache Product node_modules
-#         uses: actions/cache@v4
-#         with:
-#           path: product/node_modules
-#           key: ${{ runner.os }}-node-${{ hashFiles('product/package-lock.json') }}
-#           restore-keys: |
-#             ${{ runner.os }}-node-
-
-#       - name: Cache Order node_modules
-#         uses: actions/cache@v4
-#         with:
-#           path: order/node_modules
-#           key: ${{ runner.os }}-node-${{ hashFiles('order/package-lock.json') }}
-#           restore-keys: |
-#             ${{ runner.os }}-node-
-      
-#       # --------------------------------------------------------
-
 #       - name: Wait for Dependencies to be Ready
 #         run: |
 #           echo "Waiting for dependencies..."
@@ -517,7 +375,6 @@ jobs:
 
 #       - name: Install All Dependencies
 #         run: |
-#           echo "Installing dependencies (will be fast if cache hits)..."
 #           cd auth && npm install &
 #           cd product && npm install &
 #           cd order && npm install &
@@ -540,7 +397,7 @@ jobs:
 #           echo "JWT_SECRET=ci_secret" >> order/.env
 #           echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
 
-#       # --- GIỮ NGUYÊN LOGIC GỐC CỦA BẠN ---
+#       # --- PHIÊN BẢN SỬA LỖI CUỐI CÙNG ---
 #       - name: Run Background Services and Wait
 #         run: |
 #           echo "Starting Auth service in background..."
@@ -550,12 +407,11 @@ jobs:
 #           cd order && nohup npm start > nohup.out 2>&1 &
           
 #           echo "Waiting for Auth service to respond..."
-#           set +e 
 #           for i in {1..30}; do
-#             curl -sS --max-time 1 http://localhost:3000/login -X POST > /dev/null 2>&1
-#             if [ $? -eq 0 ]; then
+#             # SỬA LỖI: Dùng -sS, bỏ _ và f. Chuyển stdout sang /dev/null
+#             # Lệnh này sẽ thành công miễn là server trả về bất kỳ phản hồi HTTP nào (kể cả 400).
+#             if curl -sS --max-time 1 http://localhost:3000/login -X POST > /dev/null 2>&1; then
 #               echo "Auth service is responding!"
-#               set -e
 #               exit 0
 #             fi
 #             echo "Attempt $i/30: Auth service not yet responsive. Retrying in 1 seconds..."
@@ -567,69 +423,213 @@ jobs:
 #           tail -n 20 auth/nohup.out || echo "auth/nohup.out not found."
 #           exit 1
 
-#       # --- GIỮ NGUYÊN LOGIC GỐC CỦA BẠN ---
+#       # --- Chạy Tests ---
 #       - name: Run Tests (Auth, Product, Order)
 #         run: |
 #           cd auth && npm test
 #           cd ../product && npm test
 #           cd ../order && npm test
 
-#   # --- GIỮ NGUYÊN LOGIC GỐC: 1 JOB BUILD DUY NHẤT ---
 #   build-docker:
 #     needs: test
 #     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 #     runs-on: ubuntu-latest
 #     steps:
 #       - uses: actions/checkout@v4
-      
-#       # --- SỬA LỖI: THÊM BƯỚC NÀY ĐỂ HỖ TRỢ CACHE EXPORT ---
-#       - name: Set up Docker Buildx
-#         uses: docker/setup-buildx-action@v3
-
 #       - name: Login to Docker Hub
 #         uses: docker/login-action@v3
 #         with:
 #           username: ${{ secrets.DOCKER_USERNAME }}
 #           password: ${{ secrets.DOCKER_PASSWORD }}
+#       - name: Build and Push Images
+#         run: |
+#           docker build -t thaianlqd050204/microservices-auth:latest --push ./auth
+#           docker build -t thaianlqd050204/microservices-product:latest --push ./product
+#           docker build -t thaianlqd050204/microservices-order:latest --push ./order
+#           docker build -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway
+
+
+
+
+#test update toc do thu
+name: CI/CD Pipeline for Microservices
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+      rabbitmq:
+        image: rabbitmq:3-management-alpine
+        ports:
+          - 5672:5672
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
           
-#       # --- TỐI ƯU HÓA: DÙNG BUILD-PUSH-ACTION ĐỂ CACHE LAYER ---
-#       # Các bước này vẫn chạy TUẦN TỰ (lần lượt) y hệt logic gốc của bạn
+      # --- TỐI ƯU HÓA: CACHE NODE_MODULES CHO TỪNG SERVICE ---
+      - name: Cache Auth node_modules
+        uses: actions/cache@v4
+        with:
+          path: auth/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('auth/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Cache Product node_modules
+        uses: actions/cache@v4
+        with:
+          path: product/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('product/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Cache Order node_modules
+        uses: actions/cache@v4
+        with:
+          path: order/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('order/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       
-#       - name: Build and Push Auth
-#         uses: docker/build-push-action@v5
-#         with:
-#           context: ./auth
-#           push: true
-#           tags: thaianlqd050204/microservices-auth:latest
-#           cache-from: type=registry,ref=thaianlqd050204/microservices-auth:cache
-#           cache-to: type=registry,ref=thaianlqd050204/microservices-auth:cache,mode=max
+      # --------------------------------------------------------
 
-#       - name: Build and Push Product
-#         uses: docker/build-push-action@v5
-#         with:
-#           context: ./product
-#           push: true
-#           tags: thaianlqd050204/microservices-product:latest
-#           cache-from: type=registry,ref=thaianlqd050204/microservices-product:cache
-#           cache-to: type=registry,ref=thaianlqd050204/microservices-product:cache,mode=max
+      - name: Wait for Dependencies to be Ready
+        run: |
+          echo "Waiting for dependencies..."
+          npm install -g wait-on
+          wait-on tcp:27017 tcp:5672 -t 20000
 
-#       - name: Build and Push Order
-#         uses: docker/build-push-action@v5
-#         with:
-#           context: ./order
-#           push: true
-#           tags: thaianlqd050204/microservices-order:latest
-#           cache-from: type=registry,ref=thaianlqd050204/microservices-order:cache
-#           cache-to: type=registry,ref=thaianlqd050204/microservices-order:cache,mode=max
+      - name: Install All Dependencies
+        run: |
+          echo "Installing dependencies (will be fast if cache hits)..."
+          cd auth && npm install &
+          cd product && npm install &
+          cd order && npm install &
+          wait
+          
+      - name: Create .env files
+        run: |
+          echo "MONGODB_AUTH_URI=mongodb://localhost:27017/ci_auth" > auth/.env
+          echo "JWT_SECRET=ci_secret" >> auth/.env
+          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> auth/.env
 
-#       - name: Build and Push Gateway
-#         uses: docker/build-push-action@v5
-#         with:
-#           context: ./api-gateway
-#           push: true
-#           tags: thaianlqd050204/microservices-gateway:latest
-#           cache-from: type=registry,ref=thaianlqd050204/microservices-gateway:cache
-#           cache-to: type=registry,ref=thaianlqd050204/microservices-gateway:cache,mode=max
+          echo "MONGODB_PRODUCT_URI=mongodb://localhost:27017/ci_product" > product/.env
+          echo "JWT_SECRET=ci_secret" >> product/.env
+          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> product/.env
+          echo "LOGIN_TEST_USER=ci_user" >> product/.env
+          echo "LOGIN_TEST_PASSWORD=ci_password" >> product/.env
+          echo "AUTH_SERVICE_URL=http://localhost:3000" >> product/.env
+          
+          echo "MONGODB_ORDER_URI=mongodb://localhost:27017/ci_order" > order/.env
+          echo "JWT_SECRET=ci_secret" >> order/.env
+          echo "RABBITMQ_URI=amqp://guest:guest@localhost:5672" >> order/.env
+
+      # --- GIỮ NGUYÊN LOGIC GỐC CỦA BẠN ---
+      - name: Run Background Services and Wait
+        run: |
+          echo "Starting Auth service in background..."
+          cd auth && nohup npm start > nohup.out 2>&1 &
+          
+          echo "Starting Order service in background..."
+          cd order && nohup npm start > nohup.out 2>&1 &
+          
+          echo "Waiting for Auth service to respond..."
+          set +e 
+          for i in {1..30}; do
+            curl -sS --max-time 1 http://localhost:3000/login -X POST > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+              echo "Auth service is responding!"
+              set -e
+              exit 0
+            fi
+            echo "Attempt $i/30: Auth service not yet responsive. Retrying in 1 seconds..."
+            sleep 1
+          done
+          
+          echo "::error::Auth service failed to start in time."
+          echo "--- Last 20 lines of Auth service log ---"
+          tail -n 20 auth/nohup.out || echo "auth/nohup.out not found."
+          exit 1
+
+      # --- GIỮ NGUYÊN LOGIC GỐC CỦA BẠN ---
+      - name: Run Tests (Auth, Product, Order)
+        run: |
+          cd auth && npm test
+          cd ../product && npm test
+          cd ../order && npm test
+
+  # --- GIỮ NGUYÊN LOGIC GỐC: 1 JOB BUILD DUY NHẤT ---
+  build-docker:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # --- SỬA LỖI: THÊM BƯỚC NÀY ĐỂ HỖ TRỢ CACHE EXPORT ---
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          
+      # --- TỐI ƯU HÓA: DÙNG BUILD-PUSH-ACTION ĐỂ CACHE LAYER ---
+      # Các bước này vẫn chạy TUẦN TỰ (lần lượt) y hệt logic gốc của bạn
+      
+      - name: Build and Push Auth
+        uses: docker/build-push-action@v5
+        with:
+          context: ./auth
+          push: true
+          tags: thaianlqd050204/microservices-auth:latest
+          cache-from: type=registry,ref=thaianlqd050204/microservices-auth:cache
+          cache-to: type=registry,ref=thaianlqd050204/microservices-auth:cache,mode=max
+
+      - name: Build and Push Product
+        uses: docker/build-push-action@v5
+        with:
+          context: ./product
+          push: true
+          tags: thaianlqd050204/microservices-product:latest
+          cache-from: type=registry,ref=thaianlqd050204/microservices-product:cache
+          cache-to: type=registry,ref=thaianlqd050204/microservices-product:cache,mode=max
+
+      - name: Build and Push Order
+        uses: docker/build-push-action@v5
+        with:
+          context: ./order
+          push: true
+          tags: thaianlqd050204/microservices-order:latest
+          cache-from: type=registry,ref=thaianlqd050204/microservices-order:cache
+          cache-to: type=registry,ref=thaianlqd050204/microservices-order:cache,mode=max
+
+      - name: Build and Push Gateway
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api-gateway
+          push: true
+          tags: thaianlqd050204/microservices-gateway:latest
+          cache-from: type=registry,ref=thaianlqd050204/microservices-gateway:cache
+          cache-to: type=registry,ref=thaianlqd050204/microservices-gateway:cache,mode=max
 
 
 
