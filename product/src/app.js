@@ -64,7 +64,7 @@
 // module.exports = App;
 
 
-//=> thai an - update:
+//=> thai an - update - bản chưa fix lỗi:
 // const express = require("express");
 // const mongoose = require("mongoose");
 // const config = require("./config");
@@ -133,16 +133,7 @@
 // module.exports = App;
 
 
-
-
-
-
-
-//ahaihihi:
-//=> thai an - update:
-//=> thai an - update:
-//=> thai an - update:
-//=> thai an - update:
+//thaian - update - bản fix lỗi: 
 const express = require("express");
 const mongoose = require("mongoose");
 const config = require("./config");

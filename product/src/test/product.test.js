@@ -288,7 +288,7 @@
 //   });
 // });
 
-//=> thai an - update: đặt hàng
+//=> thai an - update: bản đầy đủ
 const chai = require("chai");
 const chaiHttp = require("chai-http");
 const App = require("../app");
