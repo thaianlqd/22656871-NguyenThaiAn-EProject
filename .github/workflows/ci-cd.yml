@@ -513,9 +513,12 @@ jobs:
 
       - name: Run Background Services and Wait
         run: |
-          cd auth && nohup npm start > nohup.out 2>&1 &
-          cd ../order && nohup npm start > nohup.out 2>&1 &
+          # ⚡ FIX: Khởi động CẢ 3 service từ thư mục gốc
+          (cd auth && nohup npm start > nohup.out 2>&1) &
+          (cd product && nohup npm start > nohup.out 2>&1) &
+          (cd order && nohup npm start > nohup.out 2>&1) &
 
+          # Vòng lặp wait (chỉ check auth là đủ)
           for i in {1..20}; do
             if curl -sS --max-time 1 http://localhost:3000/login -X POST > /dev/null 2>&1; then
               echo "Auth service is responding!"
@@ -525,17 +528,21 @@ jobs:
             sleep 0.5
           done
 
+          # Cải tiến: In log của cả 3 nếu thất bại
           echo "::error::Auth service failed to start in time."
           tail -n 20 auth/nohup.out || echo "auth/nohup.out not found."
+          tail -n 20 product/nohup.out || echo "product/nohup.out not found."
+          tail -n 20 order/nohup.out || echo "order/nohup.out not found."
           exit 1
         shell: bash
 
       - name: Run Tests (Auth, Product, Order)
         run: |
           set -e
-          cd auth && npm test > test.log 2>&1 && echo "✅ Auth tests passed!" &
-          cd ../product && npm test > test.log 2>&1 && echo "✅ Product tests passed!" &
-          cd ../order && npm test > test.log 2>&1 && echo "✅ Order tests passed!" &
+          # ⚡ FIX: Chạy cd vào từng thư mục từ gốc, không dùng ../
+          (cd auth && npm test > test.log 2>&1 && echo "✅ Auth tests passed!") &
+          (cd product && npm test > test.log 2>&1 && echo "✅ Product tests passed!") &
+          (cd order && npm test > test.log 2>&1 && echo "✅ Order tests passed!") &
           wait
         shell: bash
 
@@ -576,7 +583,6 @@ jobs:
           build_push gateway ./api-gateway &
           wait
         shell: bash
-
 
 
 
