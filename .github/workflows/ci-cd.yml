@@ -449,8 +449,6 @@
 #           docker build -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway
 
 
-
-
 #thaian => test
 name: CI/CD Pipeline for Microservices
 
