@@ -65,38 +65,124 @@
 
 
 //=> thai an - update:
+// const express = require("express");
+// const mongoose = require("mongoose");
+// const config = require("./config");
+// const MessageBroker = require("./utils/messageBroker");
+// // SỬA ĐỔI: Import cả router và controller instance từ file routes
+// const { router: productsRouter, productController } = require("./routes/productRoutes");
+// require("dotenv").config();
+
+// class App {
+//   constructor() {
+//     this.app = express();
+//     // Di chuyển các tác vụ bất đồng bộ ra khỏi constructor
+//     this.setMiddlewares();
+//     this.setRoutes();
+//   }
+
+//   // TẠO MỚI: Dùng hàm async init() để khởi động an toàn
+//   async init() {
+//     try {
+//       await this.connectDB();
+//       await this.setupMessageBroker();
+//       // Bắt đầu lắng nghe tin nhắn CHỈ SAU KHI RabbitMQ đã kết nối thành công
+//       productController.listenForOrderCompletion();
+//     } catch (error) {
+//       console.error("Product Service: Failed to initialize application:", error);
+//       process.exit(1); // Thoát ứng dụng nếu khởi tạo thất bại
+//     }
+//   }
+
+//   async connectDB() {
+//     await mongoose.connect(config.mongoURI);
+//     console.log("Product Service: MongoDB connected");
+//   }
+
+//   setMiddlewares() {
+//     this.app.use(express.json());
+//     this.app.use(express.urlencoded({ extended: false }));
+//   }
+
+//   setRoutes() {
+//     // API Gateway sẽ xử lý tiền tố /products
+//     this.app.use("/", productsRouter);
+//   }
+
+//   async setupMessageBroker() {
+//     // SỬA ĐỔI: Dùng await để đảm bảo kết nối hoàn tất
+//     await MessageBroker.connect();
+//   }
+
+//   start() {
+//     this.server = this.app.listen(config.port, () =>
+//       console.log(`Product Service started on port ${config.port}`)
+//     );
+//   }
+
+//   async stop() {
+//     if (this.server) {
+//       this.server.close();
+//     }
+//     await mongoose.disconnect();
+//     await MessageBroker.close(); // Thêm đóng kết nối RabbitMQ
+//     console.log("Product Service stopped");
+//   }
+// }
+
+// module.exports = App;
+
+
+
+
+
+
+
+//ahaihihi:
+//=> thai an - update:
 const express = require("express");
 const mongoose = require("mongoose");
 const config = require("./config");
 const MessageBroker = require("./utils/messageBroker");
-// SỬA ĐỔI: Import cả router và controller instance từ file routes
-const { router: productsRouter, productController } = require("./routes/productRoutes");
+const {
+  router: productsRouter,
+  productController,
+} = require("./routes/productRoutes");
 require("dotenv").config();
+
+// HÀM CHỜ (THÊM MỚI)
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 class App {
   constructor() {
     this.app = express();
-    // Di chuyển các tác vụ bất đồng bộ ra khỏi constructor
     this.setMiddlewares();
     this.setRoutes();
   }
 
-  // TẠO MỚI: Dùng hàm async init() để khởi động an toàn
+  // SỬA LẠI HÀM INIT
   async init() {
-    try {
-      await this.connectDB();
-      await this.setupMessageBroker();
-      // Bắt đầu lắng nghe tin nhắn CHỈ SAU KHI RabbitMQ đã kết nối thành công
-      productController.listenForOrderCompletion();
-    } catch (error) {
-      console.error("Product Service: Failed to initialize application:", error);
-      process.exit(1); // Thoát ứng dụng nếu khởi tạo thất bại
-    }
+    // KHÔNG DÙNG TRY-CATCH Ở ĐÂY NỮA
+    // Chúng ta sẽ để các hàm connect tự thử lại
+    this.connectDBWithRetry(); // Không await
+    this.setupMessageBrokerWithRetry(); // Không await
   }
 
-  async connectDB() {
-    await mongoose.connect(config.mongoURI);
-    console.log("Product Service: MongoDB connected");
+  // SỬA LẠI HÀM NÀY (Thêm WithRetry)
+  async connectDBWithRetry() {
+    let connected = false;
+    while (!connected) {
+      try {
+        await mongoose.connect(config.mongoURI);
+        connected = true;
+        console.log("Product Service: MongoDB connected (finally!)");
+      } catch (error) {
+        console.log(
+          "Product Service: MongoDB connection failed. Retrying in 5 seconds..."
+        );
+        await sleep(5000); // Chờ 5s rồi thử lại
+      }
+    }
   }
 
   setMiddlewares() {
@@ -106,12 +192,29 @@ class App {
 
   setRoutes() {
     // API Gateway sẽ xử lý tiền tố /products
-    this.app.use("/products", productsRouter);
+    this.app.use("/", productsRouter);
   }
 
-  async setupMessageBroker() {
-    // SỬA ĐỔI: Dùng await để đảm bảo kết nối hoàn tất
-    await MessageBroker.connect();
+  // SỬA LẠI HÀM NÀY (Thêm WithRetry)
+  async setupMessageBrokerWithRetry() {
+    let connected = false;
+    while (!connected) {
+      try {
+        await MessageBroker.connect();
+        connected = true;
+        console.log("Product Service: RabbitMQ connected (finally!)");
+        
+        // BẠN PHẢI DỜI HÀM LISTEN VÀO ĐÂY
+        // Nó chỉ được chạy sau khi RabbitMQ kết nối thành công
+        productController.listenForOrderCompletion();
+
+      } catch (error) {
+        console.log(
+          "Product Service: RabbitMQ connection failed. Retrying in 5 seconds..."
+        );
+        await sleep(5000); // Chờ 5s rồi thử lại
+      }
+    }
   }
 
   start() {

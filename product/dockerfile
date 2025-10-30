@@ -14,4 +14,9 @@ RUN npm install
 COPY . .
 
 # Lệnh chạy app khi container khởi động
-CMD ["node", "index.js"]
+# CMD ["node", "index.js"]
+
+
+# Lệnh chạy app khi container khởi động (với Nodemon)
+# -L là cờ "Legacy" để poll file, BẮT BUỘC khi dùng Docker Volumes
+CMD [ "npx" , "nodemon" , "-L", "index.js"]

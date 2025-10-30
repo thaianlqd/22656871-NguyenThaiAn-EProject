@@ -29,14 +29,13 @@ const productController = new ProductController();
 router.post("/", isAuthenticated, productController.createProduct);
 router.get("/", isAuthenticated, productController.getProducts);
 
-router.get("/:id", isAuthenticated, productController.getid);
-
-
-// router.get("/:id", isAuthenticated, productController.getProductById); hehe
 
 // Các route liên quan đến việc mua hàng
 router.post("/buy", isAuthenticated, productController.createOrder);
 router.get("/buy/:orderId", isAuthenticated, productController.getOrderStatus);
+
+//test mới ở đây
+router.get("/:id", isAuthenticated, productController.getid);
 
 // THAY ĐỔI QUAN TRỌNG: Export cả router và controller instance
 module.exports = { router, productController };

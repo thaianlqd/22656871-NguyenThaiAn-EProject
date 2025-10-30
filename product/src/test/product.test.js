@@ -446,7 +446,7 @@ describe("Products", () => {
     });
   });
 
-  // --- THÊM PHẦN TEST XEM SẢN PHẨM BẰNG ID ---
+  // --- THÊM PHẦN TEST XEM SẢN PHẨM BẰNG ID => này là check 404---
   // describe("GET /products/:id", () => {
   //   it("should return the product details by id", async function () {
   //     this.timeout(5000);
@@ -492,26 +492,26 @@ describe("Products", () => {
   //   });
   // });
 
-  // --- THÊM PHẦN TEST XEM SẢN PHẨM BẰNG ID => update dễ làm hơn---
-  describe("GET /products/:id", () => {
-    it("should return the product details by id", async function () {
-      this.timeout(5000);
-      expect(createdProducts.length).to.be.greaterThan(0);
+  // --- THÊM PHẦN TEST XEM SẢN PHẨM BẰNG ID => update dễ làm hơn này là check mỗi 200---
+  // describe("GET /products/:id", () => {
+  //   it("should return the product details by id", async function () {
+  //     this.timeout(5000);
+  //     expect(createdProducts.length).to.be.greaterThan(0);
 
-      const productToFetch = createdProducts[0];
-      const targetId = productToFetch._id;
+  //     const productToFetch = createdProducts[0];
+  //     const targetId = productToFetch._id;
 
-      const res = await chai
-        .request(app.app)
-        .get(`/products/${targetId}`)
-        .set("Authorization", `Bearer ${authToken}`);
+  //     const res = await chai
+  //       .request(app.app)
+  //       .get(`/products/${targetId}`)
+  //       .set("Authorization", `Bearer ${authToken}`);
 
-      expect(res).to.have.status(200);
-      expect(res.body).to.have.property("_id", targetId);
-    });
-  });
+  //     expect(res).to.have.status(200);
+  //     expect(res.body).to.have.property("_id", targetId);
+  //   });
+  // });
 
-
+  //=> này là check full
   // describe("GET /products/:id", () => {
   //   it("should return the product details by id", async function () {
   //     this.timeout(5000);

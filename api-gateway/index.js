@@ -12,7 +12,7 @@ app.use("/auth", (req, res) => {
 
 // Route requests to the product service
 app.use("/products", (req, res) => {
-  req.url = "/products" + req.url;
+  // req.url = "/products" + req.url;
   proxy.web(req, res, { target: "http://thaian_product_service:3001" });
 });
 

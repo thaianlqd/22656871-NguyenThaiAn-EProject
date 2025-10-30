@@ -278,21 +278,14 @@ class ProductController {
 
   //phần 8: phần thêm vào đây nè xem san pham = id 2
   async getid(req, res){
-    const product =  await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id);
+
+    if(!product){
+      return res.status(404).json({message: "ko tim dc sp"});
+    }
 
     res.status(200).json(product);
   }
-  
-
-  // async getProductById(req, res) {
-    // const product = await Product.findById(req.params.id);
-
-    // if(!product){
-    //   return res.status(404).json({message: "product not found"});
-    // }
-
-    // res.status(200).json(product);
-  // }
 
 
 }
