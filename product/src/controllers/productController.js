@@ -276,7 +276,7 @@ class ProductController {
     }
   }
 
-  //phần 8: phần thêm vào đây nè xem san pham = id 1
+  //phần 8: phần thêm vào đây nè xem san pham = id 2
   async getid(req, res){
     const product =  await Product.findById(req.params.id);
 
