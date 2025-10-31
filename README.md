@@ -169,10 +169,17 @@ Dưới đây là hình ảnh minh họa kết quả thực hiện các API endp
 ![all_sp](./public/results/sanpham_xem_all.png)
 
 6. Xem chi tiết sản phẩm bằng ID (/products/:id)
-![id_sp](./public/results/sanphan_xem_id.png)
+![id_sp](./public/results/sanpham_xem_id.png.png)
 
 7. Đặt hàng (/products/buy)
 ![dathang](./public/results/dathang.png)
 
 8. Xem trạng thái đơn hàng (/products/buy/:orderId)
 ![id_donhang](./public/results/xem_hoadon_id.png)
+
+9. Hoàn Thành CICD trên GITHUB
+![CI_CD](./public/results/ci_cd_github_done.png.png)
+
+9. Deploy DockerHub
+![Deploy_dockerhub](./public/results/deploy_dockerhub_done.png.png.png)
+
