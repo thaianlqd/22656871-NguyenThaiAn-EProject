@@ -1,8 +1,15 @@
 const express = require("express");
 const httpProxy = require("http-proxy");
+const morgan = require("morgan"); // <--- (1) THÊM DÒNG NÀY
 
 const proxy = httpProxy.createProxyServer();
 const app = express();
+
+// --- (2) "NHÉT" MORGAN VÀO ĐÂY ---
+// Dùng 'dev' format để log (ngắn gọn)
+// Phải đặt morgan TRƯỚC các route proxy
+app.use(morgan("dev"));
+// ---------------------------------
 
 // Route requests to the auth service
 app.use("/auth", (req, res) => {
