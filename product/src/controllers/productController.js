@@ -290,8 +290,9 @@ class ProductController {
   async getid(req, res){
     const product = await Product.findById(req.params.id);
 
+
     if(!product){
-      return res.status(404).json({message : "ko tim dc sp"}); 
+      return res.status(404).json({message : "ko thay sp"});
     }
 
     res.status(200).json(product);

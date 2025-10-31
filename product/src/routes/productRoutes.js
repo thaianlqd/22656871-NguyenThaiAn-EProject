@@ -34,10 +34,9 @@ router.get("/", isAuthenticated, productController.getProducts);
 router.post("/buy", isAuthenticated, productController.createOrder);
 router.get("/buy/:orderId", isAuthenticated, productController.getOrderStatus);
 
-//test mới ở đây nhes
+//Phần 8: xem sản phẩm bằng id ở đây
 // router.get("/:id", isAuthenticated, productController.getid);
 router.get("/:id", isAuthenticated, productController.getid);
-
 
 // THAY ĐỔI QUAN TRỌNG: Export cả router và controller instance
 module.exports = { router, productController };
