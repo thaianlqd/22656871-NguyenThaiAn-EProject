@@ -34,7 +34,7 @@ router.get("/", isAuthenticated, productController.getProducts);
 router.post("/buy", isAuthenticated, productController.createOrder);
 router.get("/buy/:orderId", isAuthenticated, productController.getOrderStatus);
 
-//Phần 8: xem sản phẩm bằng id ở đây
+//Phần 8: xem sản phẩm bằng id ở đây n
 router.get("/:id", isAuthenticated, productController.getid);
 
 
