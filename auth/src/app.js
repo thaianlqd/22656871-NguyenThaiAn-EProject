@@ -58,6 +58,8 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const config = require("./config");
+//tets thư viện
+const morgan = require('morgan');
 const authMiddleware = require("./middlewares/authMiddleware");
 const AuthController = require("./controllers/authController");
 
@@ -93,6 +95,9 @@ class App {
   setMiddlewares() {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: false }));
+    // --- (2) "NHÉT" MORGAN VÀO ĐÂY NÈ NÍ ---
+    // 'dev' là định dạng log: "GET /login 401 12.345 ms"
+    this.app.use(morgan("dev"));
   }
 
   setRoutes() {
