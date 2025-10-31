@@ -277,25 +277,14 @@ class ProductController {
   }
 
   //phần 8: phần mới - xem sản phẩm bằng id - thêm vào đây để báo cáo trong project 
-  // async getid(req, res){
-  //   const product = await Product.findById(req.params.id);
-
-  //   if(!product){
-  //     return res.status(404).json({message: "ko tim dc sp"});
-  //   }
-
-  //   res.status(200).json(product);
-  // }
-
   async getid(req, res){
-    const product = await Product.findById(req.params.id);
+    const sp = await Product.findById(req.params.id);
 
-
-    if(!product){
+    if(!sp){
       return res.status(404).json({message : "ko thay sp"});
     }
 
-    res.status(200).json(product);
+    res.status(200).json(sp);
   }
 
 
