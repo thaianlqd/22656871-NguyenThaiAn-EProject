@@ -169,7 +169,7 @@ Dưới đây là hình ảnh minh họa kết quả thực hiện các API endp
 ![all_sp](./public/results/sanpham_xem_all.png)
 
 6. Xem chi tiết sản phẩm bằng ID (/products/:id)
-![id_sp](./public/results/sanpham_xem_id.png.png)
+![id_sp](./public/results/sanpham_xem_id.png)
 
 7. Đặt hàng (/products/buy)
 ![dathang](./public/results/dathang.png)
