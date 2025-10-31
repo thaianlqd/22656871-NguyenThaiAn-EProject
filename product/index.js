@@ -4,7 +4,7 @@
 // const app = new App();
 // app.start();
 
-//=> thai an - update:
+//=> thai an - update - bản chính thức:
 require("dotenv").config();
 const App = require("./src/app");
 

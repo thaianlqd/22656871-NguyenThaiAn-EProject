@@ -1,4 +1,4 @@
-##=> thai an - test lan 1 : 
+##=> thai an - bản test lần 1: 
 # name: CI/CD Pipeline for Microservices
 
 # on:
@@ -132,7 +132,7 @@
 #           tags: thaian/microservices-gateway:latest
 
 
-##=> thai an - test lan 2: 
+##=> thai an - bản test lần 2: 
 
 # name: CI/CD Pipeline for Microservices
 
@@ -336,7 +336,7 @@
 #           tags: thaianlqd050204/microservices-gateway:latest
 
 
-##=> thai an - update - tăng tốc lan 9
+##=> thai an - update - bản chính thức tăng tốc demo 1:
 # name: CI/CD Pipeline for Microservices
 
 # on:
@@ -449,7 +449,7 @@
 #           docker build -t thaianlqd050204/microservices-gateway:latest --push ./api-gateway
 
 
-#thaian => test
+#thaian => update: bản chính thức - tăng tốc demo 2
 name: CI/CD Pipeline for Microservices
 
 on:

@@ -148,7 +148,7 @@
 // module.exports = ProductController;
 
 
-//=> thai an - update:
+//=> thai an - update - này là bản chính thức:
 const Product = require("../models/product");
 const messageBroker = require("../utils/messageBroker");
 const uuid = require('uuid');
@@ -276,7 +276,7 @@ class ProductController {
     }
   }
 
-  //phần 8: phần mới thêm vào đây để báo cáo trong project 
+  //phần 8: phần mới - xem sản phẩm bằng id - thêm vào đây để báo cáo trong project 
   async getid(req, res){
     const product = await Product.findById(req.params.id);
 

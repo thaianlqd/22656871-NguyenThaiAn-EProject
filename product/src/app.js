@@ -133,7 +133,7 @@
 // module.exports = App;
 
 
-//thaian - update - bản fix lỗi: 
+//thaian - update - bản fix lỗi chính thức: 
 const express = require("express");
 const mongoose = require("mongoose");
 const config = require("./config");
