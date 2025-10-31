@@ -178,8 +178,8 @@ Dưới đây là hình ảnh minh họa kết quả thực hiện các API endp
 ![id_donhang](./public/results/xem_hoadon_id.png)
 
 9. Hoàn Thành CICD trên GITHUB
-![CI_CD](./public/results/ci_cd_github_done.png.png)
+![CI_CD](./public/results/ci_cd_github_done.png)
 
 9. Deploy DockerHub
-![Deploy_dockerhub](./public/results/deploy_dockerhub_done.png.png.png)
+![Deploy_dockerhub](./public/results/deploy_dockerhub_done.png)
 
