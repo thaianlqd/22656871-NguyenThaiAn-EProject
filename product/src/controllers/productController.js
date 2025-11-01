@@ -281,11 +281,12 @@ class ProductController {
     const sp = await Product.findById(req.params.id);
 
     if(!sp){
-      return res.status(404).json({message : "ko thay sp"});
+      return res.status(404).json({message : "ko tim thay sp"});
     }
 
     res.status(200).json(sp);
   }
+
 
 }
 
